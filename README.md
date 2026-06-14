@@ -13,7 +13,7 @@
 
 1. [Overview](#overview)
 2. [Architecture](#architecture)
-3. [Features](#features)
+3. [Featurnpes](#features)
 4. [Tech Stack](#tech-stack)
 5. [Getting Started](#getting-started)
 6. [Environment Variables](#environment-variables)
