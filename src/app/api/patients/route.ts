@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getEnvErrorPayload } from "@/lib/server-env";
 import { normalizeRole } from "@/lib/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -75,7 +76,13 @@ export async function POST(request: NextRequest) {
 
   try {
     admin = createAdminClient();
-  } catch {
+  } catch (error) {
+    const envError = getEnvErrorPayload(error);
+
+    if (envError) {
+      return NextResponse.json(envError, { status: 500 });
+    }
+
     return NextResponse.json(
       { error: "Patient creation is not configured on the server. Add the Supabase service role key to the deployment environment." },
       { status: 500 }

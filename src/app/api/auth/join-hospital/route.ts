@@ -1,6 +1,7 @@
 import { randomInt } from 'crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { getEnvErrorPayload } from '@/lib/server-env'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
@@ -93,7 +94,13 @@ export async function POST(request: NextRequest) {
 
   try {
     supabase = createAdminClient()
-  } catch {
+  } catch (error) {
+    const envError = getEnvErrorPayload(error)
+
+    if (envError) {
+      return NextResponse.json(envError, { status: 500 })
+    }
+
     return NextResponse.json(
       { error: 'Hospital signup is not configured on the server. Add the Supabase service role key to the deployment environment.' },
       { status: 500 }

@@ -10,6 +10,8 @@ type JoinRole = 'doctor' | 'staff' | 'patient'
 
 type JoinHospitalResponse = {
   error?: string
+  code?: string
+  missing?: string[]
   hospital?: string
 }
 
@@ -25,15 +27,34 @@ async function readJoinResponse(response: Response) {
   const contentType = response.headers.get('content-type') ?? ''
 
   if (contentType.includes('application/json')) {
-    return (await response.json()) as JoinHospitalResponse
+    const payload = (await response.json()) as JoinHospitalResponse
+
+    if (payload.code === 'SERVER_ENV_MISSING') {
+      return {
+        ...payload,
+        error: `Server configuration is incomplete. Missing: ${payload.missing?.join(', ') || 'required environment variables'}.`,
+      }
+    }
+
+    return payload
   }
 
   const text = await response.text()
-  const message = response.status === 404 || text.trim().startsWith('<!DOCTYPE html')
-    ? 'Join signup endpoint was not found in the running app. The deployed build may still be updating.'
-    : 'Join signup endpoint did not return a readable response.'
+  const isHtml = text.trim().startsWith('<!DOCTYPE html') || text.includes('<html')
 
-  return { error: message }
+  if (response.status === 401 && isHtml) {
+    return {
+      error: 'The deployment is protected by Vercel Authentication. Disable production protection or expose this endpoint before users can join.',
+    }
+  }
+
+  if (response.status === 404 || isHtml) {
+    return {
+      error: 'Join signup endpoint was not found in the running app. Check /api/health and confirm the public domain is attached to the deployment that includes API routes.',
+    }
+  }
+
+  return { error: 'Join signup endpoint did not return a readable JSON response.' }
 }
 
 export default function JoinHospital() {
