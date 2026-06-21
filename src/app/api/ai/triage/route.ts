@@ -20,7 +20,7 @@ type Patient = {
   personal_id: string;
 };
 
-const OPENAI_MODEL = process.env.OPENAI_TRIAGE_MODEL ?? "gpt-5.2";
+const OPENAI_MODEL = process.env.OPENAI_TRIAGE_MODEL ?? "gpt-4o";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -32,11 +32,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   }
 
+  // Extract tenant context (hospital_id) from the user metadata to ensure isolation
+  const userHospitalId = user.user_metadata?.hospital_id;
+
   const { data: profile } = await supabase
     .from("users")
-    .select("role, account_status")
+    .select("role, account_status, hospital_id")
     .eq("id", user.id)
     .single();
+
+  const activeHospitalId = profile?.hospital_id ?? userHospitalId;
+
+  if (!activeHospitalId) {
+    return NextResponse.json({ error: "Tenant context could not be resolved." }, { status: 400 });
+  }
 
   const role = normalizeRole(profile?.role ?? user.user_metadata?.role);
 
@@ -74,10 +83,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Ensure scoped check: patient must belong to the active admin's hospital
   const { data: patient, error: patientError } = await supabase
     .from("patients")
-    .select("id, name, personal_id")
+    .select("id, name, personal_id, hospital_id")
     .eq("id", patientId)
+    .eq("hospital_id", activeHospitalId)
     .maybeSingle();
 
   if (patientError || !patient) {
@@ -113,22 +124,35 @@ async function getAiRecommendation(
 
   try {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const response = await client.responses.create({
-      model: OPENAI_MODEL,
-      instructions:
-        "You are a cautious clinical decision support assistant for hospital triage. You do not diagnose. Write concise escalation guidance for a licensed clinician using the supplied MEWS score, vitals, and baseline recommendation. Mention that the clinician should confirm against the full patient chart.",
-      input: [
-        `Patient: ${patient.name} (${patient.personal_id})`,
-        `Vitals: heart rate ${vitals.heartRate} bpm, SpO2 ${vitals.spo2}%, temperature ${vitals.temperature} C.`,
-        `MEWS score: ${assessment.mewsScore}/12. Risk: ${assessment.riskLevel}.`,
-        `Baseline recommendation: ${assessment.recommendation}`,
-        `Observations: ${assessment.observations.join(" ")}`,
-        "Return 2-3 short sentences. No markdown.",
-      ].join("\n"),
-      max_output_tokens: 180,
-    });
+    
+    // Corrected to OpenAI v4 SDK chat.completions.create syntax
+    // Implemented a 4-second timeout abort signal to guarantee safety on Edge routes
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-    const text = response.output_text?.trim();
+    const response = await client.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: "You are a cautious clinical decision support assistant for hospital triage. You do not diagnose. Write concise escalation guidance for a licensed clinician using the supplied MEWS score, vitals, and baseline recommendation. Mention that the clinician should confirm against the full patient chart. Return 2-3 short sentences. No markdown."
+        },
+        {
+          role: "user",
+          content: [
+            `Patient: ${patient.name} (${patient.personal_id})`,
+            `Vitals: heart rate ${vitals.heartRate} bpm, SpO2 ${vitals.spo2}%, temperature ${vitals.temperature} C.`,
+            `MEWS score: ${assessment.mewsScore}/12. Risk: ${assessment.riskLevel}.`,
+            `Baseline recommendation: ${assessment.recommendation}`,
+            `Observations: ${assessment.observations.join(" ")}`
+          ].join("\n")
+        }
+      ],
+      max_tokens: 180,
+    }, { signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    const text = response.choices[0]?.message?.content?.trim();
 
     if (!text) {
       return null;
@@ -138,7 +162,8 @@ async function getAiRecommendation(
       text,
       model: OPENAI_MODEL,
     };
-  } catch {
+  } catch (err) {
+    console.error("AI Triage generation failed. Falling back to local MEWS:", err);
     return null;
   }
 }

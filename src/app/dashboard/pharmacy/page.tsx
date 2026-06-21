@@ -33,25 +33,59 @@ export default function PharmacyPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleSave = async () => {
-    if (!form.item_name || !form.quantity) { setError("Name and quantity are required."); return; }
-    setSaving(true); setError("");
-    const { error: err } = await supabase.from("inventories").upsert([{
-      item_name: form.item_name,
-      quantity: Number(form.quantity),
-      unit: form.unit,
-      min_threshold: Number(form.min_threshold),
-      last_restocked: new Date().toISOString(),
-    }], { onConflict: "item_name" });
-    if (err) { setError(err.message); setSaving(false); return; }
+    if (!form.item_name || !form.quantity) {
+      setError("Name and quantity are required.");
+      return;
+    }
+    
+    // UI Race condition guard
+    if (saving) return;
 
-    await recordActivity({
-      action: `Updated inventory for ${form.item_name}.`,
-      actionType: "upsert",
-      tableName: "inventories",
-      details: `${form.quantity} ${form.unit}, threshold ${form.min_threshold}`,
+    setSaving(true);
+    setError("");
+
+    // Resolve tenant hospital context
+    const { data: { user } } = await supabase.auth.getUser();
+    const userHospitalId = user?.user_metadata?.hospital_id;
+    
+    const { data: profile } = await supabase
+      .from("users")
+      .select("hospital_id")
+      .eq("id", user?.id ?? "")
+      .single();
+
+    const activeHospitalId = profile?.hospital_id ?? userHospitalId;
+
+    if (!activeHospitalId) {
+      setError("Unable to resolve hospital tenant context.");
+      setSaving(false);
+      return;
+    }
+
+    // Call stored procedure to safely increment inventory atomically
+    const { error: err } = await supabase.rpc("restock_inventory_item", {
+      p_item_name: form.item_name,
+      p_quantity: Number(form.quantity),
+      p_unit: form.unit,
+      p_min_threshold: Number(form.min_threshold),
+      p_hospital_id: activeHospitalId
     });
 
-    setSaving(false); setShowModal(false);
+    if (err) {
+      setError(err.message);
+      setSaving(false);
+      return;
+    }
+
+    await recordActivity({
+      action: `Restocked inventory for ${form.item_name}.`,
+      actionType: "upsert",
+      tableName: "inventories",
+      details: `Added ${form.quantity} ${form.unit}, min threshold set to ${form.min_threshold}`,
+    });
+
+    setSaving(false);
+    setShowModal(false);
     setForm({ item_name: "", quantity: "", unit: "tablets", min_threshold: "10" });
     load();
   };
