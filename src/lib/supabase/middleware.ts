@@ -33,17 +33,9 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  let role = normalizeRole(user?.user_metadata?.role)
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    role = normalizeRole(profile?.role, role)
-  }
+  // Safely extract the role from authenticated token metadata (JWT claims).
+  // This bypasses external database queries on every HTTP request.
+  const role = normalizeRole(user?.user_metadata?.role ?? user?.app_metadata?.role)
 
   return { supabaseResponse, user, role }
 }

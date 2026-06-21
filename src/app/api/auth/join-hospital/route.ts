@@ -136,6 +136,7 @@ export async function POST(request: NextRequest) {
         role: body.role,
         username,
         full_name: fullName,
+        hospital_id: hospitalId,
       },
     })
 
@@ -153,6 +154,7 @@ export async function POST(request: NextRequest) {
       phone_number: phoneNumber || null,
       role: body.role,
       account_status: 'active',
+      hospital_id: hospitalId,
     })
 
     if (profileError) {
@@ -172,6 +174,7 @@ export async function POST(request: NextRequest) {
 
     if (body.role === 'doctor') {
       const { error: doctorError } = await supabase.from('doctors').insert({
+        hospital_id: hospitalId,
         user_id: userId,
         name: fullName,
         specialization,
@@ -189,6 +192,7 @@ export async function POST(request: NextRequest) {
 
       for (let attempt = 0; attempt < 5; attempt++) {
         const { error: patientError } = await supabase.from('patients').insert({
+          hospital_id: hospitalId,
           user_id: userId,
           name: fullName,
           personal_id: makePersonalId(),
@@ -214,6 +218,7 @@ export async function POST(request: NextRequest) {
     }
 
     await supabase.from('audit_logs').insert({
+      hospital_id: hospitalId,
       username,
       action: `${fullName} joined ${hospitalName} as ${body.role}.`,
       action_type: 'signup',

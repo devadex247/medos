@@ -145,6 +145,29 @@ export async function POST(request: NextRequest) {
 
     hospitalId = hospitalData.id
 
+    // Update user profile and auth user metadata to embed the hospital context
+    const { error: updateProfileError } = await supabase
+      .from('users')
+      .update({ hospital_id: hospitalId })
+      .eq('id', userId)
+
+    if (updateProfileError) {
+      throw new Error(updateProfileError.message || 'Failed to bind user profile to hospital workspace.')
+    }
+
+    const { error: updateAuthError } = await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: {
+        role: 'owner_admin',
+        username,
+        full_name: fullName,
+        hospital_id: hospitalId,
+      }
+    })
+
+    if (updateAuthError) {
+      throw new Error(updateAuthError.message || 'Failed to bind user credentials to hospital workspace.')
+    }
+
     const { error: membershipError } = await supabase.from('hospital_memberships').insert({
       hospital_id: hospitalId,
       user_id: userId,
@@ -177,6 +200,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { error: doctorError } = await supabase.from('doctors').insert({
+      hospital_id: hospitalId,
       user_id: userId,
       name: fullName,
       specialization: 'General Practice',
@@ -189,6 +213,7 @@ export async function POST(request: NextRequest) {
     }
 
     await supabase.from('audit_logs').insert({
+      hospital_id: hospitalId,
       username,
       action: `${hospitalData.name} workspace was created by ${fullName}.`,
       action_type: 'signup',
