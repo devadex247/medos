@@ -44,8 +44,8 @@ export async function getAuthenticatedTenantContext(
     };
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("users")
+  const usersQuery = supabase.from("users") as any;
+  const { data: profile, error: profileError } = await usersQuery
     .select("id, username, role, account_status, hospital_id")
     .eq("id", user.id)
     .maybeSingle();
