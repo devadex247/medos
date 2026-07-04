@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getAuthenticatedTenantContext } from "@/lib/auth-context";
 import { normalizeRole } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 
@@ -11,29 +12,13 @@ type HospitalRecord = {
 
 export async function GET() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: true });
 
-  if (!user) {
-    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  if (context.error) {
+    return NextResponse.json({ error: context.error.message }, { status: context.error.status });
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("users")
-    .select("role, account_status")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    return NextResponse.json({ error: "User profile could not be found." }, { status: 404 });
-  }
-
-  const role = normalizeRole(profile.role);
-
-  if (profile.account_status !== "active") {
-    return NextResponse.json({ error: "This account is inactive." }, { status: 403 });
-  }
+  const role = normalizeRole(context.profile?.role);
 
   if (role !== "owner_admin" && role !== "hospital_admin") {
     return NextResponse.json(
@@ -45,7 +30,7 @@ export async function GET() {
   const { data: membership, error: membershipError } = await supabase
     .from("hospital_memberships")
     .select("hospital_id, hospitals(name)")
-    .eq("user_id", user.id)
+    .eq("user_id", context.user?.id)
     .eq("status", "active")
     .limit(1)
     .maybeSingle();

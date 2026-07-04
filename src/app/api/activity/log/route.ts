@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getAuthenticatedTenantContext } from "@/lib/auth-context";
 import { normalizeRole } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 
@@ -53,33 +54,18 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: false });
 
-  if (!user) {
-    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  if (context.error) {
+    return NextResponse.json({ error: context.error.message }, { status: context.error.status });
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("users")
-    .select("username, role, account_status")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    return NextResponse.json({ error: "User profile could not be found." }, { status: 404 });
-  }
-
-  if (profile.account_status !== "active") {
-    return NextResponse.json({ error: "This account is inactive." }, { status: 403 });
-  }
-
-  const role = normalizeRole(profile.role);
+  const role = normalizeRole(context.profile?.role);
   const { error } = await supabase
     .from("audit_logs")
     .insert({
-      username: profile.username,
+      username: context.profile?.username,
+      hospital_id: context.hospitalId,
       action,
       action_type: actionType || role,
       table_name: tableName,

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getAuthenticatedTenantContext } from "@/lib/auth-context";
 import { getEnvErrorPayload } from "@/lib/server-env";
 import { normalizeRole } from "@/lib/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -44,29 +45,13 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: true });
 
-  if (!user) {
-    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  if (context.error) {
+    return NextResponse.json({ error: context.error.message }, { status: context.error.status });
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("users")
-    .select("username, role, account_status")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    return NextResponse.json({ error: "User profile could not be found." }, { status: 404 });
-  }
-
-  if (profile.account_status !== "active") {
-    return NextResponse.json({ error: "This account is inactive." }, { status: 403 });
-  }
-
-  const role = normalizeRole(profile.role);
+  const role = context.role;
 
   if (!["owner_admin", "hospital_admin", "doctor", "staff"].includes(role)) {
     return NextResponse.json({ error: "Your role cannot create patient records." }, { status: 403 });
@@ -92,6 +77,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await admin
     .from("patients")
     .insert({
+      hospital_id: context.hospitalId,
       name,
       personal_id: personalId,
       gender: nullableString(body.gender, 80),
@@ -112,7 +98,8 @@ export async function POST(request: NextRequest) {
   }
 
   await admin.from("audit_logs").insert({
-    username: profile.username,
+    username: context.profile?.username,
+    hospital_id: context.hospitalId,
     action: `Added patient ${name}.`,
     action_type: "create",
     table_name: "patients",
@@ -156,29 +143,13 @@ export async function PATCH(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: true });
 
-  if (!user) {
-    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  if (context.error) {
+    return NextResponse.json({ error: context.error.message }, { status: context.error.status });
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("users")
-    .select("username, role, account_status")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    return NextResponse.json({ error: "User profile could not be found." }, { status: 404 });
-  }
-
-  if (profile.account_status !== "active") {
-    return NextResponse.json({ error: "This account is inactive." }, { status: 403 });
-  }
-
-  const role = normalizeRole(profile.role);
+  const role = context.role;
 
   if (!["owner_admin", "hospital_admin", "doctor", "staff"].includes(role)) {
     return NextResponse.json({ error: "Your role cannot edit patient records." }, { status: 403 });
@@ -214,6 +185,7 @@ export async function PATCH(request: NextRequest) {
       allergies: nullableString(body.allergies, 300),
     })
     .eq("id", id)
+    .eq("hospital_id", context.hospitalId)
     .select("*")
     .single();
 
@@ -225,7 +197,8 @@ export async function PATCH(request: NextRequest) {
   }
 
   await admin.from("audit_logs").insert({
-    username: profile.username,
+    username: context.profile?.username,
+    hospital_id: context.hospitalId,
     action: `Updated patient ${name}.`,
     action_type: "update",
     table_name: "patients",
