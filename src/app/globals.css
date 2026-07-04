@@ -1,19 +1,55 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --color-med-bg: #070a13;
-  --color-med-card: #0f1626;
+  /* Dynamic design system colors mapped to CSS variables */
+  --color-med-bg: var(--medos-bg);
+  --color-med-card: var(--medos-card);
+  --color-med-header: var(--medos-header);
+  --color-med-border: var(--medos-border);
+  --color-med-primary: var(--medos-primary);
+  --color-med-muted: var(--medos-muted);
+
+  /* Primary brand colors */
+  --color-medosBlue: #0066FF;
+  --color-medos-blue: #0066FF;
   --color-med-teal: #0ea5e9;
   --color-med-green: #10b981;
   --color-med-accent: #6366f1;
-  --color-med-border: rgba(255, 255, 255, 0.08);
   
   --font-sans: 'Outfit', 'Inter', sans-serif;
 }
 
 :root {
-  --background: #070a13;
-  --foreground: #f8fafc;
+  --medos-bg: #F4F7FA;
+  --medos-card: #FFFFFF;
+  --medos-header: #FFFFFF;
+  --medos-primary: #1E293B;
+  --medos-muted: #64748B;
+  --medos-border: #E2E8F0;
+  
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(226, 232, 240, 0.8);
+  
+  --background: #F4F7FA;
+  --foreground: #1E293B;
+  --font-sans: 'Outfit', 'Inter', sans-serif;
+}
+
+:root.dark {
+  --medos-bg: #0B0F19;
+  --medos-card: #1E293B;
+  --medos-header: #0A192F;
+  --medos-primary: #F8FAFC;
+  --medos-muted: #94A3B8;
+  --medos-border: #334155;
+  
+  --glass-bg: rgba(30, 41, 59, 0.75);
+  --glass-border: rgba(51, 65, 85, 0.6);
+  
+  --background: #0B0F19;
+  --foreground: #F8FAFC;
 }
 
 body {
@@ -23,6 +59,13 @@ body {
   overflow-x: hidden;
 }
 
+/* Smooth global transitions for theme changes */
+html, body, header, footer, nav, aside, main, section, input, select, textarea, button, .glass-panel, .glass-card {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -30,55 +73,51 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #070a13;
+  background: var(--medos-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--medos-border);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: var(--medos-muted);
 }
 
 /* Glassmorphism helpers */
 .glass-panel {
-  background: rgba(15, 22, 38, 0.7);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
 }
 
 .glass-card {
-  background: rgba(30, 41, 59, 0.3);
+  background: var(--glass-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-  border-color: rgba(14, 165, 233, 0.3);
-  box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.15);
+  border-color: rgba(0, 102, 255, 0.3);
+  box-shadow: 0 10px 30px -10px rgba(0, 102, 255, 0.15);
   transform: translateY(-2px);
-}
-
-/* Smooth animations */
-.transition-duration-300 {
-  transition-duration: 300ms;
 }
 
 /* Form Styling overrides */
 input, select, textarea {
-  background-color: rgba(15, 22, 38, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
+  background-color: var(--medos-card);
+  border: 1px solid var(--medos-border);
+  color: var(--medos-primary);
   outline: none;
   transition: all 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  border-color: #0066FF;
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
 }
+

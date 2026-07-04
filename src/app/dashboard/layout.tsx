@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { fetchRecentActivity, formatActivityTime, type RecentActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/client";
 import AutoLogoutHandler from "@/components/AutoLogoutHandler";
@@ -197,18 +198,17 @@ export default function DashboardLayout({
         <aside
           className={`
             flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden
-            border-r border-white/5
+            border-r border-med-border bg-med-header
             ${sidebarOpen ? "w-64" : "w-16"}
           `}
-          style={{ background: "linear-gradient(180deg, #0a1020 0%, #070a13 100%)" }}
         >
           {/* logo */}
-          <div className="flex items-center gap-3 h-16 px-4 border-b border-white/5 flex-shrink-0">
+          <div className="flex items-center gap-3 h-16 px-4 border-b border-med-border flex-shrink-0">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-med-teal to-med-accent flex items-center justify-center flex-shrink-0">
               <BrainCircuit size={16} className="text-white" />
             </div>
             {sidebarOpen && (
-              <span className="font-bold text-white text-sm tracking-wide whitespace-nowrap">
+              <span className="font-bold text-med-primary text-sm tracking-wide whitespace-nowrap">
                 MedOS AI
               </span>
             )}
@@ -228,15 +228,15 @@ export default function DashboardLayout({
                     <Link
                       href={item.href}
                       title={item.label}
-                      className={`
-                        flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
-                        transition-all duration-200 group relative overflow-hidden
-                        ${
-                          active
-                            ? "bg-med-teal/10 text-med-teal shadow-sm shadow-med-teal/10"
-                            : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
-                        }
-                      `}
+                        className={`
+                          flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
+                          transition-all duration-200 group relative overflow-hidden
+                          ${
+                            active
+                              ? "bg-med-teal/10 text-med-teal shadow-sm shadow-med-teal/10"
+                              : "text-med-muted hover:text-med-primary hover:bg-slate-100 dark:hover:bg-white/5"
+                          }
+                        `}
                     >
                       {/* active indicator bar */}
                       {active && (
@@ -262,7 +262,7 @@ export default function DashboardLayout({
           </nav>
 
           {/* user block */}
-          <div className="border-t border-white/5 p-3 flex-shrink-0">
+          <div className="border-t border-med-border p-3 flex-shrink-0">
             {sidebarOpen ? (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-med-teal/30 to-med-accent/30 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
@@ -271,12 +271,12 @@ export default function DashboardLayout({
                     "?"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-slate-100 truncate">
+                  <p className="text-xs font-semibold text-med-primary truncate">
                     {profile?.full_name ?? profile?.username}
                   </p>
                   <p
                     className={`text-xs truncate ${
-                      ROLE_COLORS[role] ?? "text-slate-400"
+                      ROLE_COLORS[role] ?? "text-med-muted"
                     }`}
                   >
                     {getRoleLabel(role)}
@@ -305,25 +305,28 @@ export default function DashboardLayout({
         {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* top bar */}
-          <header className="h-16 flex items-center gap-4 px-6 border-b border-white/5 bg-med-bg/80 backdrop-blur-sm flex-shrink-0">
+          <header className="h-16 flex items-center gap-4 px-6 border-b border-med-border bg-med-header/80 backdrop-blur-sm flex-shrink-0">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-all duration-200"
+              className="p-2 rounded-lg text-med-muted hover:text-med-primary hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200"
               aria-label="Toggle sidebar"
             >
               {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
 
             {/* breadcrumb */}
-            <div className="flex items-center gap-1.5 text-sm text-slate-400">
-              <span className="text-slate-600">MedOS</span>
-              <ChevronRight size={14} className="text-slate-700" />
-              <span className="text-slate-200 capitalize">
+            <div className="flex items-center gap-1.5 text-sm text-med-muted">
+              <span className="text-med-muted/60">MedOS</span>
+              <ChevronRight size={14} className="text-med-border" />
+              <span className="text-med-primary font-semibold capitalize">
                 {activeRoute.label}
               </span>
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-3">
+              {/* Theme Toggle */}
+              <ThemeToggle />
+
               {/* notification bell */}
               <div ref={notificationsRef} className="relative">
                 <button
@@ -335,20 +338,20 @@ export default function DashboardLayout({
                   }}
                   aria-label="Open notifications"
                   aria-expanded={notificationsOpen}
-                  className="relative p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-all duration-200"
+                  className="relative p-2 rounded-lg text-med-muted hover:text-med-primary hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200"
                 >
                   <Bell size={18} />
                   {activity.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-med-teal text-[10px] leading-4 text-slate-950 font-bold text-center">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-medosBlue text-[10px] leading-4 text-white font-bold text-center">
                       {activity.length}
                     </span>
                   )}
                 </button>
 
                 {notificationsOpen && (
-                  <div className="absolute right-0 top-11 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-white/10 bg-slate-950 shadow-2xl shadow-black/40 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-100">Recent activity</p>
+                  <div className="absolute right-0 top-11 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-med-border bg-med-card shadow-2xl shadow-black/10 dark:shadow-black/40 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-med-border flex items-center justify-between">
+                      <p className="text-sm font-semibold text-med-primary">Recent activity</p>
                       <button
                         type="button"
                         onClick={() => void loadRecentActivity()}
@@ -360,19 +363,19 @@ export default function DashboardLayout({
 
                     <div className="max-h-80 overflow-y-auto">
                       {activityLoading ? (
-                        <div className="px-4 py-6 text-sm text-slate-500">Loading activity...</div>
+                        <div className="px-4 py-6 text-sm text-med-muted">Loading activity...</div>
                       ) : activity.length === 0 ? (
-                        <div className="px-4 py-6 text-sm text-slate-500">No recent activity yet.</div>
+                        <div className="px-4 py-6 text-sm text-med-muted">No recent activity yet.</div>
                       ) : (
                         activity.map((item) => (
                           <Link
                             key={item.id}
                             href={getActivityHref(item.table_name)}
                             onClick={() => setNotificationsOpen(false)}
-                            className="block px-4 py-3 border-b border-white/5 hover:bg-white/[0.03] transition-colors"
+                            className="block px-4 py-3 border-b border-med-border hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors"
                           >
-                            <p className="text-sm text-slate-200 line-clamp-2">{item.action}</p>
-                            <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                            <p className="text-sm text-med-primary line-clamp-2">{item.action}</p>
+                            <p className="mt-1 flex items-center gap-1.5 text-xs text-med-muted">
                               <Clock size={12} />
                               {formatActivityTime(item.created_at)} · {item.table_name}
                             </p>
@@ -384,7 +387,7 @@ export default function DashboardLayout({
                     <Link
                       href={role === "owner_admin" || role === "hospital_admin" ? "/dashboard/audit" : "/dashboard"}
                       onClick={() => setNotificationsOpen(false)}
-                      className="block px-4 py-3 text-xs font-semibold text-med-teal hover:bg-white/[0.03] transition-colors"
+                      className="block px-4 py-3 text-xs font-semibold text-medosBlue hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors"
                     >
                       {role === "owner_admin" || role === "hospital_admin" ? "View audit log" : "View dashboard"}
                     </Link>
@@ -402,7 +405,7 @@ export default function DashboardLayout({
                   }}
                   aria-label="Open user menu"
                   aria-expanded={userMenuOpen}
-                  className="h-9 flex items-center gap-2 rounded-lg px-1.5 pr-2 text-slate-300 hover:text-white hover:bg-white/5 transition-all"
+                  className="h-9 flex items-center gap-2 rounded-lg px-1.5 pr-2 text-med-muted hover:text-med-primary hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
                 >
                   <span className="w-8 h-8 rounded-full bg-gradient-to-br from-med-teal/40 to-med-accent/40 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
                     {profile?.full_name?.[0]?.toUpperCase() ??
@@ -412,22 +415,22 @@ export default function DashboardLayout({
                   <span className="hidden sm:block max-w-32 truncate text-xs font-semibold">
                     {profile?.full_name ?? profile?.username}
                   </span>
-                  <ChevronDown size={14} className="hidden sm:block text-slate-500" />
+                  <ChevronDown size={14} className="hidden sm:block text-med-muted/60" />
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 top-11 z-50 w-64 rounded-xl border border-white/10 bg-slate-950 shadow-2xl shadow-black/40 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-white/8 flex items-center gap-3">
+                  <div className="absolute right-0 top-11 z-50 w-64 rounded-xl border border-med-border bg-med-card shadow-2xl shadow-black/10 dark:shadow-black/40 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-med-border flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-med-teal/40 to-med-accent/40 flex items-center justify-center text-xs font-bold text-white">
                         {profile?.full_name?.[0]?.toUpperCase() ??
                           profile?.username?.[0]?.toUpperCase() ??
                           "?"}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-100 truncate">
+                        <p className="text-sm font-semibold text-med-primary truncate">
                           {profile?.full_name ?? profile?.username}
                         </p>
-                        <p className={`text-xs truncate ${ROLE_COLORS[role] ?? "text-slate-400"}`}>
+                        <p className={`text-xs truncate ${ROLE_COLORS[role] ?? "text-med-muted"}`}>
                           {getRoleLabel(role)}
                         </p>
                       </div>
@@ -436,14 +439,14 @@ export default function DashboardLayout({
                     <Link
                       href="/dashboard/settings"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-white/[0.03] transition-colors"
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-med-primary hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors"
                     >
                       <UserCircle size={16} /> Profile settings
                     </Link>
                     <Link
                       href="/dashboard"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-white/[0.03] transition-colors"
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-med-primary hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors"
                     >
                       <LayoutDashboard size={16} /> Dashboard overview
                     </Link>
