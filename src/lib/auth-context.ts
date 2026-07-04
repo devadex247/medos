@@ -1,16 +1,18 @@
 import { normalizeRole, type Role } from "@/lib/rbac";
 
+type QueryBuilder = {
+  select: (columns: string) => QueryBuilder;
+  eq: (column: string, value: unknown) => QueryBuilder;
+  limit: (count: number) => QueryBuilder;
+  maybeSingle: () => Promise<{ data: any; error: any }>;
+  single: () => Promise<{ data: any; error: any }>;
+};
+
 type SupabaseClientLike = {
   auth: {
     getUser: () => Promise<{ data: { user: any | null } }>;
   };
-  from: (table: string) => {
-    select: (columns: string) => {
-      eq: (column: string, value: unknown) => {
-        maybeSingle: () => Promise<{ data: any; error: any }>;
-      };
-    };
-  };
+  from: (table: string) => QueryBuilder;
 };
 
 type AuthContext = {

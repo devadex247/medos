@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
         .from("audit_logs")
         .select(SELECT_FIELDS)
         .eq("username", context.profile?.username)
+        .eq("hospital_id", context.hospitalId)
         .order("created_at", { ascending: false })
         .limit(limit),
     ];
@@ -86,6 +87,7 @@ export async function GET(request: NextRequest) {
             .from("audit_logs")
             .select(SELECT_FIELDS)
             .eq("patient_id", patient.id)
+            .eq("hospital_id", context.hospitalId)
             .order("created_at", { ascending: false })
             .limit(limit)
         );
