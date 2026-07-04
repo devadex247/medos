@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { assessTriage, type TriageRiskLevel } from '@/lib/triage'
+import ThemeToggle from '@/components/ThemeToggle'
 import {
   Activity,
   LayoutDashboard,
@@ -31,25 +32,25 @@ function getLandingRisk(level: TriageRiskLevel): { color: string; bg: string; te
     return {
       color: '#10b981',
       bg: 'rgba(16, 185, 129, 0.1)',
-      text: 'text-emerald-400',
+      text: 'text-emerald-500 dark:text-emerald-400',
     }
   } else if (level === 'Moderate Risk') {
     return {
       color: '#f59e0b',
       bg: 'rgba(245, 158, 11, 0.1)',
-      text: 'text-amber-400',
+      text: 'text-amber-600 dark:text-amber-400',
     }
   } else if (level === 'High Risk') {
     return {
       color: '#f97316',
       bg: 'rgba(249, 115, 22, 0.1)',
-      text: 'text-orange-400',
+      text: 'text-orange-600 dark:text-orange-400',
     }
   } else {
     return {
       color: '#ef4444',
       bg: 'rgba(239, 68, 68, 0.1)',
-      text: 'text-red-400',
+      text: 'text-red-600 dark:text-red-400',
     }
   }
 }
@@ -86,32 +87,33 @@ export default function LandingPage() {
   const risk = getLandingRisk(assessment.riskLevel)
 
   return (
-    <div className="relative min-h-screen bg-med-bg overflow-hidden flex flex-col justify-between">
+    <div className="relative min-h-screen bg-med-bg text-med-primary overflow-hidden flex flex-col justify-between">
       {/* Navigation Header */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between z-10">
+      <header className="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between z-10 border-b border-med-border">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-gradient-to-tr from-med-teal to-med-accent text-slate-900 shadow-lg shadow-med-teal/20">
+          <div className="p-2.5 rounded-xl bg-gradient-to-tr from-med-teal to-med-accent text-white shadow-lg shadow-med-teal/20">
             <Activity className="w-6 h-6 stroke-[2.5]" />
           </div>
           <div>
-            <span className="text-xl font-bold tracking-tight text-white leading-none">
-              MedOS <span className="text-med-teal font-extrabold">AI</span>
+            <span className="text-xl font-bold tracking-tight text-med-primary leading-none">
+              MedOS <span className="text-medosBlue font-extrabold">AI</span>
             </span>
-            <span className="text-xs text-slate-400 font-semibold tracking-wider uppercase">Nigerian Clinical OS</span>
+            <span className="block text-[10px] text-med-muted font-semibold tracking-wider uppercase">Nigerian Clinical OS</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Link
             href="/login"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 bg-slate-950/40 hover:bg-slate-900/60 text-slate-200 text-sm font-semibold tracking-wide transition-all cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-med-border bg-med-card hover:bg-slate-100 dark:hover:bg-slate-800 text-med-primary text-sm font-semibold tracking-wide transition-all cursor-pointer shadow-sm"
           >
             <LogIn className="w-4 h-4" />
             Sign In
           </Link>
           <Link
             href="/signup/admin"
-            className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-med-teal hover:bg-med-teal/85 text-slate-950 text-sm font-extrabold tracking-wide transition-all shadow-lg shadow-med-teal/15 cursor-pointer"
+            className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-medosBlue hover:bg-opacity-95 text-white text-sm font-extrabold tracking-wide transition-all shadow-lg shadow-medosBlue/20 cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             Register Hospital
@@ -123,29 +125,29 @@ export default function LandingPage() {
       <main className="w-full max-w-7xl mx-auto px-6 py-10 md:py-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center z-10 flex-grow">
         {/* Hero Copy */}
         <div className="lg:col-span-6 flex flex-col gap-6 text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-med-teal/10 border border-med-teal/20 text-med-teal text-xs font-semibold uppercase tracking-wider w-fit">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-medosBlue/10 border border-medosBlue/20 text-medosBlue text-xs font-semibold uppercase tracking-wider w-fit">
             <Award className="w-3.5 h-3.5" /> RBAC, audit trails, and AI triage for hospital teams
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.1]">
-            MedOS <span className="text-transparent bg-clip-text bg-gradient-to-r from-med-teal to-med-accent">AI</span>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-med-primary leading-[1.1]">
+            MedOS <span className="text-transparent bg-clip-text bg-gradient-to-r from-medosBlue to-med-accent">AI</span>
           </h1>
 
-          <p className="text-base md:text-lg text-slate-400 leading-relaxed max-w-xl">
+          <p className="text-base md:text-lg text-med-muted leading-relaxed max-w-xl">
             A role-aware hospital workspace for patient intake, appointments, pharmacy stock, lab orders, radiology records, Naira billing, audit logs, and clinical triage support.
           </p>
 
           <div className="flex flex-wrap items-center gap-4 mt-2">
             <Link
               href="/signup/admin"
-              className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-med-teal to-med-accent hover:opacity-90 text-slate-950 font-extrabold tracking-wide transition-all shadow-xl shadow-med-teal/15 cursor-pointer"
+              className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-medosBlue hover:bg-opacity-90 text-white font-extrabold tracking-wide transition-all shadow-xl shadow-medosBlue/20 cursor-pointer"
             >
               Setup Admin Workspace
-              <ArrowRight className="w-4 h-4 text-slate-950" />
+              <ArrowRight className="w-4 h-4 text-white" />
             </Link>
             <Link
               href="/signup/join"
-              className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-white/15 bg-slate-900/30 hover:bg-slate-900/60 text-slate-200 font-semibold tracking-wide transition-all cursor-pointer"
+              className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-med-border bg-med-card hover:bg-slate-100 dark:hover:bg-slate-800 text-med-primary font-semibold tracking-wide transition-all cursor-pointer shadow-sm"
             >
               Join with Token
             </Link>
@@ -153,11 +155,11 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-2 gap-3 max-w-xl">
             {ROLE_PREVIEW.map((role) => (
-              <div key={role.label} className="border border-white/8 bg-slate-950/30 rounded-lg p-3 flex gap-3">
-                <role.icon className="w-4 h-4 text-med-teal flex-shrink-0 mt-0.5" />
+              <div key={role.label} className="border border-med-border bg-med-card rounded-lg p-3 flex gap-3 shadow-sm">
+                <role.icon className="w-4 h-4 text-medosBlue flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-bold text-white">{role.label}</p>
-                  <p className="text-xs text-slate-400 leading-relaxed">{role.copy}</p>
+                  <p className="text-sm font-bold text-med-primary">{role.label}</p>
+                  <p className="text-xs text-med-muted leading-relaxed">{role.copy}</p>
                 </div>
               </div>
             ))}
@@ -165,27 +167,27 @@ export default function LandingPage() {
         </div>
 
         {/* Live Interactive MEWS Triage Simulation Widget */}
-        <div className="lg:col-span-6 glass-panel p-6 sm:p-8 rounded-2xl relative shadow-2xl overflow-hidden border border-white/10 flex flex-col gap-5">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-med-teal/5 rounded-full blur-2xl" />
+        <div className="lg:col-span-6 glass-panel p-6 sm:p-8 rounded-2xl relative shadow-2xl overflow-hidden border border-med-border flex flex-col gap-5">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-medosBlue/5 rounded-full blur-2xl" />
           
-          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+          <div className="flex items-center justify-between border-b border-med-border pb-4">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-red-500/80 animate-pulse" />
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Live Clinical Simulator</span>
+              <span className="text-xs font-bold text-med-primary uppercase tracking-widest">Live Clinical Simulator</span>
             </div>
-            <span className="text-xs font-mono text-slate-500">triage_assistant.sys</span>
+            <span className="text-xs font-mono text-med-muted">triage_assistant.sys</span>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-slate-300 font-bold mb-1">
-              <Sparkles className="w-4 h-4 text-med-teal" /> Adjust Patient Vitals below:
+            <div className="flex items-center gap-2 text-sm text-med-primary font-bold mb-1">
+              <Sparkles className="w-4 h-4 text-medosBlue" /> Adjust Patient Vitals below:
             </div>
 
             {/* HR Slider */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs font-medium">
-                <span className="text-slate-400">Heart Rate (HR)</span>
-                <span className="text-white font-mono">{hr} bpm</span>
+                <span className="text-med-muted">Heart Rate (HR)</span>
+                <span className="text-med-primary font-mono">{hr} bpm</span>
               </div>
               <input
                 type="range"
@@ -193,15 +195,15 @@ export default function LandingPage() {
                 max="150"
                 value={hr}
                 onChange={(e) => setHr(Number(e.target.value))}
-                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-med-teal"
+                className="w-full h-1 bg-med-border rounded-lg appearance-none cursor-pointer accent-medosBlue"
               />
             </div>
 
             {/* SpO2 Slider */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs font-medium">
-                <span className="text-slate-400">Oxygen Saturation (SpO₂)</span>
-                <span className="text-white font-mono">{spo2} %</span>
+                <span className="text-med-muted">Oxygen Saturation (SpO₂)</span>
+                <span className="text-med-primary font-mono">{spo2} %</span>
               </div>
               <input
                 type="range"
@@ -209,15 +211,15 @@ export default function LandingPage() {
                 max="100"
                 value={spo2}
                 onChange={(e) => setSpo2(Number(e.target.value))}
-                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-med-teal"
+                className="w-full h-1 bg-med-border rounded-lg appearance-none cursor-pointer accent-medosBlue"
               />
             </div>
 
             {/* Temp Slider */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs font-medium">
-                <span className="text-slate-400">Body Temperature</span>
-                <span className="text-white font-mono">{temp.toFixed(1)} °C</span>
+                <span className="text-med-muted">Body Temperature</span>
+                <span className="text-med-primary font-mono">{temp.toFixed(1)} °C</span>
               </div>
               <input
                 type="range"
@@ -226,7 +228,7 @@ export default function LandingPage() {
                 step="0.1"
                 value={temp}
                 onChange={(e) => setTemp(Number(e.target.value))}
-                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-med-teal"
+                className="w-full h-1 bg-med-border rounded-lg appearance-none cursor-pointer accent-medosBlue"
               />
             </div>
           </div>
@@ -246,8 +248,8 @@ export default function LandingPage() {
                   style={{ backgroundColor: risk.color }}
                 />
                 <div>
-                  <h4 className="text-sm font-bold text-white leading-none">{assessment.riskLevel}</h4>
-                  <span className="text-xxs text-slate-400">MEWS Score Algorithm</span>
+                  <h4 className="text-sm font-bold text-med-primary leading-none">{assessment.riskLevel}</h4>
+                  <span className="text-[10px] text-med-muted">MEWS Score Algorithm</span>
                 </div>
               </div>
               <div className="text-right">
@@ -257,13 +259,13 @@ export default function LandingPage() {
                 >
                   {assessment.mewsScore}
                 </span>
-                <span className="text-xs text-slate-500 font-bold"> / 12</span>
+                <span className="text-xs text-med-muted font-bold"> / 12</span>
               </div>
             </div>
 
             {/* Progress indicator bar */}
             <div>
-              <div className="h-1.5 w-full bg-slate-950/40 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
@@ -275,8 +277,8 @@ export default function LandingPage() {
             </div>
 
             {/* Clinical Recommendation Text */}
-            <div className="text-xs text-slate-300 bg-slate-950/30 rounded-lg p-3 border border-white/5 flex gap-2">
-              <Info className="w-4 h-4 text-med-teal flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-med-primary bg-slate-100/50 dark:bg-slate-950/40 rounded-lg p-3 border border-med-border flex gap-2">
+              <Info className="w-4 h-4 text-medosBlue flex-shrink-0 mt-0.5" />
               <p className="leading-relaxed">{assessment.recommendation}</p>
             </div>
           </div>
@@ -284,15 +286,15 @@ export default function LandingPage() {
       </main>
 
       {/* Modules Section */}
-      <section className="w-full max-w-7xl mx-auto px-6 py-12 md:py-20 border-t border-white/5">
+      <section className="w-full max-w-7xl mx-auto px-6 py-12 md:py-20 border-t border-med-border">
         <div className="text-center max-w-3xl mx-auto mb-16 flex flex-col gap-3">
-          <span className="text-xs uppercase text-med-teal font-extrabold tracking-widest">
+          <span className="text-xs uppercase text-medosBlue font-extrabold tracking-widest">
             Core Modules
           </span>
-          <h3 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+          <h3 className="text-3xl md:text-4xl font-black text-med-primary tracking-tight">
             Integrated Workspace for Clinical Excellence
           </h3>
-          <p className="text-sm md:text-base text-slate-400">
+          <p className="text-sm md:text-base text-med-muted">
             A comprehensive operational dashboard connecting clinicians, laboratory experts, radiologists, and administrative staff under one portal.
           </p>
         </div>
@@ -345,59 +347,59 @@ export default function LandingPage() {
               desc: 'Immutable, cryptographically validated activity records logs detailing all patient file read/write actions.'
             }
           ].map((m, idx) => (
-            <div key={idx} className="glass-card p-6 rounded-2xl flex flex-col gap-4 border border-white/5 hover:border-med-teal/20 transition-all">
-              <div className="p-3 rounded-xl bg-gradient-to-tr from-slate-900 to-slate-950 border border-white/5 text-med-teal w-fit">
+            <div key={idx} className="glass-card p-6 rounded-2xl flex flex-col gap-4 border border-med-border hover:border-medosBlue/35 transition-all">
+              <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-med-border text-medosBlue w-fit shadow-sm">
                 <m.icon className="w-6 h-6" />
               </div>
-              <h4 className="text-base font-bold text-white">{m.title}</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">{m.desc}</p>
+              <h4 className="text-base font-bold text-med-primary">{m.title}</h4>
+              <p className="text-xs text-med-muted leading-relaxed">{m.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Compliance Section */}
-      <section className="w-full max-w-7xl mx-auto px-6 py-12 md:py-20 border-t border-white/5">
+      <section className="w-full max-w-7xl mx-auto px-6 py-12 md:py-20 border-t border-med-border">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5 flex flex-col gap-5">
-            <span className="text-xs uppercase text-med-teal font-extrabold tracking-widest">
+            <span className="text-xs uppercase text-medosBlue font-extrabold tracking-widest">
               Regulatory Standards
             </span>
-            <h3 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">
+            <h3 className="text-3xl md:text-4xl font-black text-med-primary tracking-tight leading-tight">
               100% Compliant with Nigerian Health Guidelines
             </h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className="text-sm text-med-muted leading-relaxed">
               Designed from the ground up to respect local administrative frameworks, data sovereignty rules, and medical council guidelines.
             </p>
           </div>
 
           <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="glass-card p-6 rounded-2xl border border-white/5 flex flex-col gap-3">
-              <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg w-fit border border-emerald-500/20 font-mono text-xs font-bold">
+            <div className="glass-card p-6 rounded-2xl border border-med-border flex flex-col gap-3">
+              <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg w-fit border border-emerald-500/20 font-mono text-xs font-bold">
                 NDPR
               </div>
-              <h4 className="text-sm font-bold text-white">Data Privacy</h4>
-              <p className="text-xxs text-slate-400 leading-relaxed">
+              <h4 className="text-sm font-bold text-med-primary">Data Privacy</h4>
+              <p className="text-[10px] text-med-muted leading-relaxed">
                 Adheres strictly to the Nigeria Data Protection Regulation. All patient health records are encrypted at rest with local audit trail validations.
               </p>
             </div>
 
-            <div className="glass-card p-6 rounded-2xl border border-white/5 flex flex-col gap-3">
+            <div className="glass-card p-6 rounded-2xl border border-med-border flex flex-col gap-3">
               <div className="p-2 bg-med-teal/10 text-med-teal rounded-lg w-fit border border-med-teal/20 font-mono text-xs font-bold">
                 MDCN
               </div>
-              <h4 className="text-sm font-bold text-white">Practice Audits</h4>
-              <p className="text-xxs text-slate-400 leading-relaxed">
+              <h4 className="text-sm font-bold text-med-primary">Practice Audits</h4>
+              <p className="text-[10px] text-med-muted leading-relaxed">
                 Follows the Medical and Dental Council of Nigeria clinical registers standards, requiring credentials-backed validation of all diagnostic logs.
               </p>
             </div>
 
-            <div className="glass-card p-6 rounded-2xl border border-white/5 flex flex-col gap-3">
+            <div className="glass-card p-6 rounded-2xl border border-med-border flex flex-col gap-3">
               <div className="p-2 bg-med-accent/10 text-med-accent rounded-lg w-fit border border-med-accent/20 font-mono text-xs font-bold">
                 NHIA
               </div>
-              <h4 className="text-sm font-bold text-white">Insurance Tariff</h4>
-              <p className="text-xxs text-slate-400 leading-relaxed">
+              <h4 className="text-sm font-bold text-med-primary">Insurance Tariff</h4>
+              <p className="text-[10px] text-med-muted leading-relaxed">
                 Tariffs aligned with the National Health Insurance Authority guidelines to ensure HMO coverage claims match standardized tables.
               </p>
             </div>
@@ -406,10 +408,10 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="w-full border-t border-white/5 py-8 text-center text-xs text-slate-500 z-10">
+      <footer className="w-full border-t border-med-border py-8 text-center text-xs text-med-muted z-10">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="flex items-center gap-1.5">
-            Made with <Heart className="w-3.5 h-3.5 text-med-teal fill-med-teal" /> for digital health operations in Nigeria.
+            Made with <Heart className="w-3.5 h-3.5 text-medosBlue fill-medosBlue" /> for digital health operations in Nigeria.
           </p>
           <p>
             MedOS AI &copy; 2026. Custom-tailored workspace. All rights reserved.
@@ -419,3 +421,4 @@ export default function LandingPage() {
     </div>
   )
 }
+
