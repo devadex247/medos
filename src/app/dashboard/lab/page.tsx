@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { recordActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/client";
-import { FlaskConical, Plus, X, Loader2, AlertCircle, ChevronDown } from "lucide-react";
+import { FlaskConical, Plus, X, Loader2, AlertCircle, ChevronDown, Pencil } from "lucide-react";
 
 type LabOrder = {
   id: number;
@@ -12,6 +12,8 @@ type LabOrder = {
   status: string;
   result: string | null;
   created_at: string;
+  doctor_id?: number;
+  patient_id?: number;
   doctors: { name: string } | null;
   patients: { name: string; personal_id: string } | null;
 };
@@ -39,6 +41,8 @@ const COMMON_TESTS = [
   { name: "C-Reactive Protein", loinc: "1988-5" },
 ];
 
+const EMPTY_FORM = { patient_id: "", doctor_id: "", test_name: "", loinc_code: "", status: "Pending", result: "" };
+
 export default function LabPage() {
   const supabase = createClient();
   const [orders, setOrders] = useState<LabOrder[]>([]);
@@ -46,16 +50,27 @@ export default function LabPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ patient_id: "", doctor_id: "", test_name: "", loinc_code: "", status: "Pending", result: "" });
+  const [editTarget, setEditTarget] = useState<LabOrder | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [profile, setProfile] = useState<any>(null);
+
+  const EDIT_ROLES = ["owner_admin", "hospital_admin", "doctor", "staff"];
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("users").select("role").eq("id", user.id).single().then(({ data }) => setProfile(data));
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase
       .from("lab_orders")
-      .select("id, test_name, loinc_code, status, result, created_at, doctors(name), patients(name, personal_id)")
+      .select("id, test_name, loinc_code, status, result, created_at, doctor_id, patient_id, doctors(name), patients(name, personal_id)")
       .order("created_at", { ascending: false })
       .limit(100);
     setOrders((data ?? []) as unknown as LabOrder[]);
@@ -73,34 +88,69 @@ export default function LabPage() {
     setForm({ ...form, test_name: name, loinc_code: t?.loinc ?? "" });
   };
 
+  const openCreate = () => { setEditTarget(null); setForm(EMPTY_FORM); setError(""); setShowModal(true); };
+  const openEdit = (o: LabOrder) => {
+    setEditTarget(o);
+    setForm({
+      patient_id: String(o.patient_id ?? ""),
+      doctor_id: String(o.doctor_id ?? ""),
+      test_name: o.test_name,
+      loinc_code: o.loinc_code,
+      status: o.status,
+      result: o.result ?? "",
+    });
+    setError("");
+    setShowModal(true);
+  };
+
   const handleSave = async () => {
     if (!form.patient_id || !form.doctor_id || !form.test_name) { setError("Patient, doctor, and test are required."); return; }
     setSaving(true); setError("");
-    const { error: err } = await supabase.from("lab_orders").insert([{
-      patient_id: Number(form.patient_id),
-      doctor_id: Number(form.doctor_id),
-      test_name: form.test_name,
-      loinc_code: form.loinc_code,
-      status: form.status,
-      result: form.result || null,
-    }]);
-    if (err) { setError(err.message); setSaving(false); return; }
 
-    const patient = patients.find((item) => String(item.id) === form.patient_id);
-    await recordActivity({
-      action: `Created lab order for ${patient?.name ?? "patient"}: ${form.test_name}.`,
-      actionType: "create",
-      tableName: "lab_orders",
-      patientId: Number(form.patient_id),
-      details: form.result || form.status,
-    });
+    if (editTarget) {
+      const { error: err } = await supabase.from("lab_orders").update({
+        status: form.status,
+        result: form.result || null,
+        loinc_code: form.loinc_code,
+      }).eq("id", editTarget.id);
+
+      if (err) { setError(err.message); setSaving(false); return; }
+
+      await recordActivity({
+        action: `Updated lab order for ${editTarget.patients?.name ?? "patient"}: ${editTarget.test_name} → ${form.status}.`,
+        actionType: "update",
+        tableName: "lab_orders",
+        patientId: Number(form.patient_id),
+        details: form.result || form.status,
+      });
+    } else {
+      const { error: err } = await supabase.from("lab_orders").insert([{
+        patient_id: Number(form.patient_id),
+        doctor_id: Number(form.doctor_id),
+        test_name: form.test_name,
+        loinc_code: form.loinc_code,
+        status: form.status,
+        result: form.result || null,
+      }]);
+      if (err) { setError(err.message); setSaving(false); return; }
+
+      const patient = patients.find((p) => String(p.id) === form.patient_id);
+      await recordActivity({
+        action: `Created lab order for ${patient?.name ?? "patient"}: ${form.test_name}.`,
+        actionType: "create",
+        tableName: "lab_orders",
+        patientId: Number(form.patient_id),
+        details: form.result || form.status,
+      });
+    }
 
     setSaving(false); setShowModal(false);
-    setForm({ patient_id: "", doctor_id: "", test_name: "", loinc_code: "", status: "Pending", result: "" });
+    setForm(EMPTY_FORM);
     load();
   };
 
   const filtered = statusFilter === "All" ? orders : orders.filter((o) => o.status === statusFilter);
+  const canEdit = profile && EDIT_ROLES.includes(profile.role);
 
   return (
     <div className="space-y-6">
@@ -109,7 +159,7 @@ export default function LabPage() {
           <h1 className="text-xl font-bold text-white flex items-center gap-2"><FlaskConical size={20} className="text-med-accent" /> Laboratory</h1>
           <p className="text-sm text-slate-400 mt-0.5">{orders.length} total orders</p>
         </div>
-        <button onClick={() => { setShowModal(true); setError(""); }} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-med-accent hover:opacity-90 text-white transition-all">
+        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-med-accent hover:opacity-90 text-white transition-all">
           <Plus size={16} /> New Lab Order
         </button>
       </div>
@@ -133,7 +183,7 @@ export default function LabPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-white/5">
-                {["Test", "LOINC", "Patient", "Doctor", "Status", "Result", "Date"].map((h) => (
+                {["Test", "LOINC", "Patient", "Doctor", "Status", "Result", "Date", ...(canEdit ? ["Actions"] : [])].map((h) => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr></thead>
@@ -154,6 +204,13 @@ export default function LabPage() {
                     </td>
                     <td className="px-5 py-3.5 text-slate-400 max-w-xs truncate">{o.result ?? "—"}</td>
                     <td className="px-5 py-3.5 text-slate-500 text-xs whitespace-nowrap">{new Date(o.created_at).toLocaleDateString()}</td>
+                    {canEdit && (
+                      <td className="px-5 py-3.5">
+                        <button onClick={() => openEdit(o)} className="flex items-center gap-1 text-xs text-med-teal hover:underline">
+                          <Pencil size={12} /> Edit
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -162,50 +219,69 @@ export default function LabPage() {
         )}
       </div>
 
+      {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}>
-          <div className="glass-panel rounded-2xl w-full max-w-md">
+          <div className="glass-panel rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
-              <h2 className="text-base font-semibold text-white">New Lab Order</h2>
+              <h2 className="text-base font-semibold text-white">{editTarget ? `Edit Order — ${editTarget.test_name}` : "New Lab Order"}</h2>
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all"><X size={16} /></button>
             </div>
             <div className="px-6 py-5 space-y-4">
               {error && <p className="text-sm text-red-400 bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
-              {[
-                { label: "Patient *", key: "patient_id", options: patients.map((p) => ({ value: p.id, label: `${p.name} — ${p.personal_id}` })) },
-                { label: "Doctor *", key: "doctor_id", options: doctors.map((d) => ({ value: d.id, label: d.name })) },
-              ].map((f) => (
-                <div key={f.key}>
-                  <label className="block text-xs text-slate-400 mb-1.5">{f.label}</label>
-                  <div className="relative">
-                    <select value={(form as Record<string, string>)[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors">
-                      <option value="">Select…</option>
-                      {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+
+              {!editTarget && (
+                <>
+                  {[
+                    { label: "Patient *", key: "patient_id", options: patients.map((p) => ({ value: p.id, label: `${p.name} — ${p.personal_id}` })) },
+                    { label: "Doctor *", key: "doctor_id", options: doctors.map((d) => ({ value: d.id, label: d.name })) },
+                  ].map((f) => (
+                    <div key={f.key}>
+                      <label className="block text-xs text-slate-400 mb-1.5">{f.label}</label>
+                      <div className="relative">
+                        <select value={(form as Record<string, string>)[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors">
+                          <option value="">Select…</option>
+                          {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                      </div>
+                    </div>
+                  ))}
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1.5">Test Name *</label>
+                    <div className="relative">
+                      <select value={form.test_name} onChange={(e) => handleTestSelect(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors">
+                        <option value="">Select or type…</option>
+                        {COMMON_TESTS.map((t) => <option key={t.loinc} value={t.name}>{t.name}</option>)}
+                      </select>
+                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                    </div>
                   </div>
-                </div>
-              ))}
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Test Name *</label>
-                <div className="relative">
-                  <select value={form.test_name} onChange={(e) => handleTestSelect(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors">
-                    <option value="">Select or type…</option>
-                    {COMMON_TESTS.map((t) => <option key={t.loinc} value={t.name}>{t.name}</option>)}
-                  </select>
-                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                </div>
-              </div>
+                </>
+              )}
+
               <div>
                 <label className="block text-xs text-slate-400 mb-1.5">LOINC Code</label>
                 <input type="text" value={form.loinc_code} onChange={(e) => setForm({ ...form, loinc_code: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 font-mono outline-none focus:border-med-teal transition-colors" />
               </div>
+
               <div>
-                <label className="block text-xs text-slate-400 mb-1.5">Result (if available)</label>
-                <textarea value={form.result} onChange={(e) => setForm({ ...form, result: e.target.value })} rows={2}
+                <label className="block text-xs text-slate-400 mb-1.5">Status</label>
+                <div className="relative">
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors">
+                    {["Pending", "Processing", "Completed", "Cancelled"].map((s) => <option key={s}>{s}</option>)}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1.5">Result {editTarget ? "" : "(if available)"}</label>
+                <textarea value={form.result} onChange={(e) => setForm({ ...form, result: e.target.value })} rows={3}
                   placeholder="Leave blank if pending…"
                   className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 placeholder-slate-600 outline-none focus:border-med-teal transition-colors resize-none" />
               </div>
@@ -215,7 +291,7 @@ export default function LabPage() {
               <button onClick={handleSave} disabled={saving}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-med-accent hover:opacity-90 text-white transition-all disabled:opacity-50">
                 {saving && <Loader2 size={14} className="animate-spin" />}
-                {saving ? "Submitting…" : "Submit Order"}
+                {saving ? "Submitting…" : editTarget ? "Save Changes" : "Submit Order"}
               </button>
             </div>
           </div>

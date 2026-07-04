@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { recordActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/client";
-import { Pill, Plus, X, Loader2, AlertCircle, AlertTriangle, ChevronDown } from "lucide-react";
+import { Pill, Plus, X, Loader2, AlertCircle, AlertTriangle, ChevronDown, Pencil } from "lucide-react";
 
 type Item = {
   id: number;
@@ -14,14 +14,28 @@ type Item = {
   last_restocked: string;
 };
 
+const UNITS = ["tablets", "capsules", "vials", "bottles", "boxes", "units", "litres", "ml"];
+const EMPTY_FORM = { item_name: "", quantity: "", unit: "tablets", min_threshold: "10" };
+
 export default function PharmacyPage() {
   const supabase = createClient();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ item_name: "", quantity: "", unit: "tablets", min_threshold: "10" });
+  const [editTarget, setEditTarget] = useState<Item | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [profile, setProfile] = useState<any>(null);
+
+  const EDIT_ROLES = ["owner_admin", "hospital_admin", "doctor", "staff"];
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("users").select("role").eq("id", user.id).single().then(({ data }) => setProfile(data));
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -32,65 +46,79 @@ export default function PharmacyPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const openCreate = () => { setEditTarget(null); setForm(EMPTY_FORM); setError(""); setShowModal(true); };
+  const openEdit = (item: Item) => {
+    setEditTarget(item);
+    setForm({
+      item_name: item.item_name,
+      quantity: String(item.quantity),
+      unit: item.unit,
+      min_threshold: String(item.min_threshold),
+    });
+    setError("");
+    setShowModal(true);
+  };
+
   const handleSave = async () => {
     if (!form.item_name || !form.quantity) {
       setError("Name and quantity are required.");
       return;
     }
-    
-    // UI Race condition guard
     if (saving) return;
-
     setSaving(true);
     setError("");
 
-    // Resolve tenant hospital context
-    const { data: { user } } = await supabase.auth.getUser();
-    const userHospitalId = user?.user_metadata?.hospital_id;
-    
-    const { data: profile } = await supabase
-      .from("users")
-      .select("hospital_id")
-      .eq("id", user?.id ?? "")
-      .single();
+    if (editTarget) {
+      // DIRECT UPDATE (edit existing item)
+      const { error: err } = await supabase.from("inventories").update({
+        quantity: Number(form.quantity),
+        unit: form.unit,
+        min_threshold: Number(form.min_threshold),
+        last_restocked: new Date().toISOString(),
+      }).eq("id", editTarget.id);
 
-    const activeHospitalId = profile?.hospital_id ?? userHospitalId;
+      if (err) { setError(err.message); setSaving(false); return; }
 
-    if (!activeHospitalId) {
-      setError("Unable to resolve hospital tenant context.");
-      setSaving(false);
-      return;
+      await recordActivity({
+        action: `Updated inventory for ${editTarget.item_name}.`,
+        actionType: "update",
+        tableName: "inventories",
+        details: `Set quantity to ${form.quantity} ${form.unit}, min threshold ${form.min_threshold}`,
+      });
+    } else {
+      // Resolve tenant hospital context for new item
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase.from("users").select("hospital_id").eq("id", user?.id ?? "").single();
+      const activeHospitalId = profile?.hospital_id;
+
+      if (!activeHospitalId) { setError("Unable to resolve hospital tenant context."); setSaving(false); return; }
+
+      const { error: err } = await supabase.rpc("restock_inventory_item", {
+        p_item_name: form.item_name,
+        p_quantity: Number(form.quantity),
+        p_unit: form.unit,
+        p_min_threshold: Number(form.min_threshold),
+        p_hospital_id: activeHospitalId,
+      });
+
+      if (err) { setError(err.message); setSaving(false); return; }
+
+      await recordActivity({
+        action: `Restocked inventory for ${form.item_name}.`,
+        actionType: "upsert",
+        tableName: "inventories",
+        details: `Added ${form.quantity} ${form.unit}, min threshold set to ${form.min_threshold}`,
+      });
     }
-
-    // Call stored procedure to safely increment inventory atomically
-    const { error: err } = await supabase.rpc("restock_inventory_item", {
-      p_item_name: form.item_name,
-      p_quantity: Number(form.quantity),
-      p_unit: form.unit,
-      p_min_threshold: Number(form.min_threshold),
-      p_hospital_id: activeHospitalId
-    });
-
-    if (err) {
-      setError(err.message);
-      setSaving(false);
-      return;
-    }
-
-    await recordActivity({
-      action: `Restocked inventory for ${form.item_name}.`,
-      actionType: "upsert",
-      tableName: "inventories",
-      details: `Added ${form.quantity} ${form.unit}, min threshold set to ${form.min_threshold}`,
-    });
 
     setSaving(false);
     setShowModal(false);
-    setForm({ item_name: "", quantity: "", unit: "tablets", min_threshold: "10" });
+    setForm(EMPTY_FORM);
     load();
   };
 
   const low = items.filter((i) => i.quantity < i.min_threshold);
+  const canEdit = profile && EDIT_ROLES.includes(profile.role);
 
   return (
     <div className="space-y-6">
@@ -99,7 +127,7 @@ export default function PharmacyPage() {
           <h1 className="text-xl font-bold text-white flex items-center gap-2"><Pill size={20} className="text-amber-400" /> Pharmacy & Inventory</h1>
           <p className="text-sm text-slate-400 mt-0.5">{items.length} items · {low.length} low stock</p>
         </div>
-        <button onClick={() => { setShowModal(true); setError(""); }} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-amber-500 hover:bg-amber-400 text-white transition-all">
+        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-amber-500 hover:bg-amber-400 text-white transition-all">
           <Plus size={16} /> Add / Restock
         </button>
       </div>
@@ -123,7 +151,7 @@ export default function PharmacyPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-white/5">
-                {["Item Name", "Quantity", "Unit", "Min Threshold", "Last Restocked", "Status"].map((h) => (
+                {["Item Name", "Quantity", "Unit", "Min Threshold", "Last Restocked", "Status", ...(canEdit ? ["Actions"] : [])].map((h) => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr></thead>
@@ -145,6 +173,13 @@ export default function PharmacyPage() {
                           {isLow ? "Low Stock" : "In Stock"}
                         </span>
                       </td>
+                      {canEdit && (
+                        <td className="px-5 py-3.5">
+                          <button onClick={() => openEdit(item)} className="flex items-center gap-1 text-xs text-med-teal hover:underline">
+                            <Pencil size={12} /> Edit
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -154,17 +189,26 @@ export default function PharmacyPage() {
         )}
       </div>
 
+      {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}>
           <div className="glass-panel rounded-2xl w-full max-w-md">
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
-              <h2 className="text-base font-semibold text-white">Add / Restock Item</h2>
+              <h2 className="text-base font-semibold text-white">{editTarget ? `Edit — ${editTarget.item_name}` : "Add / Restock Item"}</h2>
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all"><X size={16} /></button>
             </div>
             <div className="px-6 py-5 space-y-4">
               {error && <p className="text-sm text-red-400 bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
+
+              {!editTarget && (
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1.5">Item Name *</label>
+                  <input type="text" value={form.item_name} onChange={(e) => setForm({ ...form, item_name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 outline-none focus:border-med-teal transition-colors" />
+                </div>
+              )}
+
               {[
-                { label: "Item Name *", key: "item_name", type: "text" },
                 { label: "Quantity *", key: "quantity", type: "number" },
                 { label: "Min Threshold", key: "min_threshold", type: "number" },
               ].map((f) => (
@@ -175,12 +219,13 @@ export default function PharmacyPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 outline-none focus:border-med-teal transition-colors" />
                 </div>
               ))}
+
               <div>
                 <label className="block text-xs text-slate-400 mb-1.5">Unit</label>
                 <div className="relative">
                   <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors">
-                    {["tablets", "capsules", "vials", "bottles", "boxes", "units", "litres", "ml"].map((u) => <option key={u}>{u}</option>)}
+                    {UNITS.map((u) => <option key={u}>{u}</option>)}
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                 </div>
@@ -191,7 +236,7 @@ export default function PharmacyPage() {
               <button onClick={handleSave} disabled={saving}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-amber-500 hover:bg-amber-400 text-white transition-all disabled:opacity-50">
                 {saving && <Loader2 size={14} className="animate-spin" />}
-                {saving ? "Saving…" : "Save"}
+                {saving ? "Saving…" : editTarget ? "Save Changes" : "Save"}
               </button>
             </div>
           </div>
