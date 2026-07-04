@@ -1,18 +1,10 @@
 import { normalizeRole, type Role } from "@/lib/rbac";
 
-type QueryBuilder = {
-  select: (columns: string) => QueryBuilder;
-  eq: (column: string, value: unknown) => QueryBuilder;
-  limit: (count: number) => QueryBuilder;
-  maybeSingle: () => Promise<{ data: any; error: any }>;
-  single: () => Promise<{ data: any; error: any }>;
-};
-
 type SupabaseClientLike = {
   auth: {
     getUser: () => Promise<{ data: { user: any | null } }>;
   };
-  from: (table: string) => QueryBuilder;
+  from: (table: string) => any;
 };
 
 type AuthContext = {
@@ -80,8 +72,7 @@ export async function getAuthenticatedTenantContext(
     };
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("hospital_memberships")
+  const { data: membership, error: membershipError } = await (supabase.from("hospital_memberships") as any)
     .select("hospital_id, role, status")
     .eq("user_id", user.id)
     .eq("status", "active")

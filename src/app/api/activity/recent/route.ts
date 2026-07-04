@@ -40,7 +40,7 @@ function uniqueAndSort(rows: ActivityRow[], limit: number) {
 export async function GET(request: NextRequest) {
   const limit = getLimit(request);
   const supabase = await createClient();
-  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: false });
+  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: true });
 
   if (context.error) {
     return NextResponse.json({ error: context.error.message }, { status: context.error.status });

@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: false });
+  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: true });
 
   if (context.error) {
     return NextResponse.json({ error: context.error.message }, { status: context.error.status });
