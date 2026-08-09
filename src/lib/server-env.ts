@@ -8,6 +8,7 @@ export const REQUIRED_SERVER_ENV = [
 
 export const OPTIONAL_SERVER_ENV = [
   "OPENAI_API_KEY",
+  "OPENAI_CHAT_MODEL",
   "OPENAI_TRIAGE_MODEL",
   "RESEND_API_KEY",
 ] as const;

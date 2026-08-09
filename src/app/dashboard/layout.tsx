@@ -37,12 +37,13 @@ import {
   Settings,
   Clock,
   UserCircle,
+  BrainCircuit,
 } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
 const NAV_ICONS: Record<DashboardRouteKey, React.ElementType> = {
   overview: LayoutDashboard,
-  triage: Scan,
+  aiChat: BrainCircuit,
   patients: Users,
   appointments: CalendarDays,
   pharmacy: Pill,
@@ -61,7 +62,7 @@ const ACTIVITY_HREFS: Record<string, string> = {
   lab_orders: "/dashboard/lab",
   radiology_images: "/dashboard/radiology",
   staff_schedules: "/dashboard/staff",
-  patient_vitals: "/dashboard/triage",
+  patient_vitals: "/dashboard/patients",
   users: "/dashboard/settings",
   hospitals: "/dashboard/settings",
   hospital_memberships: "/dashboard/staff",

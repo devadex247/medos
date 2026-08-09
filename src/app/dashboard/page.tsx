@@ -120,7 +120,7 @@ const EMPTY_PATIENT_PORTAL_DATA: PatientPortalData = {
 
 const ACTION_ICONS: Record<DashboardRouteKey, React.ElementType> = {
   overview: Activity,
-  triage: BrainCircuit,
+  aiChat: BrainCircuit,
   patients: Users,
   appointments: CalendarDays,
   pharmacy: Pill,
@@ -134,7 +134,7 @@ const ACTION_ICONS: Record<DashboardRouteKey, React.ElementType> = {
 
 const ACTION_COLORS: Record<DashboardRouteKey, string> = {
   overview: "from-slate-600 to-slate-800",
-  triage: "from-med-teal to-sky-600",
+  aiChat: "from-med-teal to-indigo-600",
   patients: "from-emerald-500 to-teal-600",
   appointments: "from-cyan-500 to-blue-600",
   pharmacy: "from-amber-500 to-orange-600",
@@ -202,9 +202,9 @@ function buildRoleKpis(
     label: "High-risk Vitals",
     value: counts.highRiskVitals,
     sub: "High or critical MEWS records",
-    icon: BrainCircuit,
+    icon: HeartPulse,
     color: "text-rose-400",
-    href: "/dashboard/triage",
+    href: "/dashboard/patients",
   };
 
   const patients: KPI = {
