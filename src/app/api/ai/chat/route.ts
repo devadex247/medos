@@ -103,21 +103,22 @@ export async function POST(request: NextRequest) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-    const response = await client.chat.completions.create(
-      {
-        model: OPENAI_MODEL,
-        messages: [
-          {
-            role: "system",
-            content: getSystemPrompt(getRoleLabel(context.role)),
-          },
-          ...messages,
-        ],
-        temperature: 0.2,
-        max_tokens: 750,
-      } as any,
-      { signal: controller.signal }
-    );
+    const requestPayload: any = {
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: getSystemPrompt(getRoleLabel(context.role)),
+        },
+        ...messages,
+      ],
+      temperature: 0.2,
+      max_tokens: 750,
+    };
+
+    const response = await client.chat.completions.create(requestPayload, {
+      signal: controller.signal,
+    });
 
     clearTimeout(timeoutId);
 

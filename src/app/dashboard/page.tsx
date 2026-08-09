@@ -157,20 +157,20 @@ function StatCard({ kpi, delay }: { kpi: KPI; delay: number }) {
     >
       <div className="flex items-start justify-between">
         <div
-          className={`w-12 h-12 rounded-3xl flex items-center justify-center border border-white/10 shadow-[0_18px_40px_-30px_rgba(56,189,248,0.85)] ${kpi.color}`}
+          className={`w-12 h-12 rounded-3xl flex items-center justify-center border border-blue-100 shadow-[0_18px_40px_-30px_rgba(56,189,248,0.35)] bg-gradient-to-br from-sky-500 to-blue-600 ${kpi.color}`}
         >
           <Icon size={20} className="text-white" />
         </div>
         <ArrowUpRight
           size={16}
-          className="text-slate-400 group-hover:text-white transition-colors duration-200"
+          className="text-slate-500 group-hover:text-blue-700 transition-colors duration-200"
         />
       </div>
       <div>
-        <p className="text-3xl font-bold text-white tabular-nums">{kpi.value}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{kpi.label}</p>
+        <p className="text-3xl font-bold text-slate-900 tabular-nums">{kpi.value}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{kpi.label}</p>
       </div>
-      <p className="text-xs text-slate-500">{kpi.sub}</p>
+      <p className="text-xs text-slate-400">{kpi.sub}</p>
     </Link>
   );
 }
