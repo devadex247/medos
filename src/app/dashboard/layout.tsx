@@ -171,9 +171,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-dashboard-shell text-white">
-        <div className="flex flex-col items-center gap-4 rounded-3xl bg-white/5 border border-white/10 p-8 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)]">
+        <div className="flex flex-col items-center gap-4 rounded-3xl bg-white/95 border border-blue-100/60 p-8 shadow-[0_24px_80px_-48px_rgba(56,102,255,0.12)] dark:bg-white/5 dark:border-white/10 dark:shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)]">
           <div className="w-12 h-12 border-2 border-med-teal border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-200 text-sm">Loading MedOS AI…</p>
+          <p className="text-slate-900 text-sm dark:text-slate-200">Loading MedOS AI…</p>
         </div>
       </div>
     );
@@ -186,7 +186,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
         <aside
           className={`
-            flex flex-col transition-width duration-300 ease-in-out overflow-hidden border-r border-white/10 bg-white/5 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]
+            flex flex-col transition-width duration-300 ease-in-out overflow-hidden border-r border-blue-100/70 bg-white/95 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(56,102,255,0.12)]
             ${sidebarOpen ? "w-64" : "w-16"}
           `}
         >
@@ -196,7 +196,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <LayoutDashboard size={16} className="text-white" />
             </div>
             {sidebarOpen && (
-              <span className="font-bold text-med-primary text-sm tracking-wide whitespace-nowrap">
+              <span className="font-bold text-slate-900 text-sm tracking-wide whitespace-nowrap dark:text-white">
                 MedOS AI
               </span>
             )}
@@ -221,7 +221,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         flex items-center gap-3 rounded-3xl px-3 py-3 text-sm font-semibold transition-all duration-200 group
                         ${isActive
                           ? "bg-gradient-to-r from-med-teal/20 to-med-accent/20 text-white shadow-[0_18px_40px_-28px_rgba(56,189,248,0.8)]"
-                          : "text-slate-300 hover:text-white hover:bg-white/10"}
+                          : "text-slate-600 hover:text-white hover:bg-blue-50 dark:text-slate-300 dark:hover:bg-white/10"}
                       `}
                     >
                       {/* Active indicator bar */}
