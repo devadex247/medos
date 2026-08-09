@@ -97,8 +97,9 @@ export default function AIChatPage() {
       });
 
       const payload = (await response.json()) as ChatResponse;
+      const message = payload.message;
 
-      if (!response.ok || !payload.message) {
+      if (!response.ok || !message) {
         throw new Error(payload.error || "AI chat could not respond.");
       }
 
@@ -107,7 +108,7 @@ export default function AIChatPage() {
         {
           id: makeMessageId(),
           role: "assistant",
-          content: payload.message.content,
+          content: message.content,
         },
       ]);
       setModel(payload.model ?? null);
