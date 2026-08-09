@@ -1,8 +1,8 @@
-import { randomInt } from 'crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { getEnvErrorPayload } from '@/lib/server-env'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { cleanString, makeUsername, makeAccessToken, errorMessage } from '@/lib/api-utils'
 
 export const runtime = 'nodejs'
 
@@ -14,36 +14,6 @@ type AdminSignupBody = {
   hospitalAddress?: string
   hospitalEmail?: string
   hospitalPhone?: string
-}
-
-function cleanString(value: unknown) {
-  return typeof value === 'string' ? value.trim() : ''
-}
-
-function makeUsername(email: string) {
-  const base = email
-    .split('@')[0]
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '')
-
-  return `${base || 'user'}_${randomInt(100000, 999999)}`
-}
-
-function makeAccessToken() {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let token = ''
-
-  for (let i = 0; i < 8; i++) {
-    token += alphabet[randomInt(0, alphabet.length)]
-  }
-
-  return token
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'An unexpected database error occurred.'
 }
 
 export async function POST(request: NextRequest) {

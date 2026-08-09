@@ -5,6 +5,7 @@ import { getEnvErrorPayload } from "@/lib/server-env";
 import { normalizeRole } from "@/lib/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { cleanString, nullableString } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
 
@@ -19,14 +20,6 @@ type CreatePatientBody = {
   allergies?: string | null;
 };
 
-function cleanString(value: unknown, maxLength = 240) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
-
-function nullableString(value: unknown, maxLength = 240) {
-  const cleaned = cleanString(value, maxLength);
-  return cleaned || null;
-}
 
 export async function POST(request: NextRequest) {
   let body: CreatePatientBody;

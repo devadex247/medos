@@ -152,23 +152,22 @@ function StatCard({ kpi, delay }: { kpi: KPI; delay: number }) {
   return (
     <Link
       href={kpi.href}
-      className="glass-card rounded-2xl p-5 flex flex-col gap-4 group"
+      className="glass-card rounded-3xl p-6 flex flex-col gap-4 group"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-start justify-between">
         <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center ${kpi.color} bg-current/10`}
-          style={{ background: `color-mix(in srgb, currentColor 12%, transparent)` }}
+          className={`w-12 h-12 rounded-3xl flex items-center justify-center border border-white/10 shadow-[0_18px_40px_-30px_rgba(56,189,248,0.85)] ${kpi.color}`}
         >
-          <Icon size={20} className={kpi.color} />
+          <Icon size={20} className="text-white" />
         </div>
         <ArrowUpRight
           size={16}
-          className="text-slate-600 group-hover:text-slate-300 transition-colors duration-200"
+          className="text-slate-400 group-hover:text-white transition-colors duration-200"
         />
       </div>
       <div>
-        <p className="text-2xl font-bold text-white tabular-nums">{kpi.value}</p>
+        <p className="text-3xl font-bold text-white tabular-nums">{kpi.value}</p>
         <p className="text-xs text-slate-400 mt-0.5">{kpi.label}</p>
       </div>
       <p className="text-xs text-slate-500">{kpi.sub}</p>
@@ -521,7 +520,7 @@ export default function DashboardOverview() {
 
       {/* ── Quick Actions ──────────────────────────────────────────── */}
       <section>
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
           Quick Actions
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -531,17 +530,16 @@ export default function DashboardOverview() {
               <Link
                 key={a.href}
                 href={a.href}
-                className="relative overflow-hidden rounded-xl p-4 flex flex-col gap-3 group hover:scale-[1.02] transition-transform duration-200"
-                style={{ background: "rgba(15,22,38,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}
+                className="relative overflow-hidden rounded-3xl p-5 flex flex-col gap-3 group transition-all duration-300 border border-white/10 bg-white/5 hover:bg-white/10 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.85)]"
               >
-                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${a.color} flex items-center justify-center`}>
+                <div className={`w-11 h-11 rounded-3xl bg-gradient-to-br ${a.color} flex items-center justify-center shadow-sm shadow-slate-900/30`}>
                   <Icon size={18} className="text-white" />
                 </div>
-                <span className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">
+                <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
                   {a.label}
                 </span>
                 <span
-                  className={`absolute -bottom-4 -right-4 w-20 h-20 rounded-full bg-gradient-to-br ${a.color} opacity-10 group-hover:opacity-20 transition-opacity`}
+                  className={`absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-gradient-to-br ${a.color} opacity-10 group-hover:opacity-20 transition-opacity`}
                 />
               </Link>
             );

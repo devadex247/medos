@@ -18,11 +18,16 @@ type IncomingMessage = {
   content?: unknown;
 };
 
+type ChatRequestMessage = {
+  role: "assistant" | "user";
+  content: string;
+};
+
 type ChatBody = {
   messages?: IncomingMessage[];
 };
 
-function cleanMessage(message: IncomingMessage) {
+function cleanMessage(message: IncomingMessage): ChatRequestMessage | null {
   const role = message.role === "assistant" ? "assistant" : message.role === "user" ? "user" : null;
   const content = typeof message.content === "string" ? message.content.trim() : "";
 
@@ -110,7 +115,7 @@ export async function POST(request: NextRequest) {
         ],
         temperature: 0.2,
         max_tokens: 750,
-      },
+      } as any,
       { signal: controller.signal }
     );
 

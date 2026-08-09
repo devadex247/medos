@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getAuthenticatedTenantContext } from "@/lib/auth-context";
 import { normalizeRole } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
+import { cleanString, cleanOptionalNumber, isTableName } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
 
@@ -15,20 +16,6 @@ type ActivityLogBody = {
   details?: string | null;
 };
 
-function cleanString(value: unknown, maxLength: number) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
-
-function cleanOptionalNumber(value: unknown) {
-  if (value === null || value === undefined || value === "") return null;
-
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue : null;
-}
-
-function isTableName(value: string) {
-  return /^[a-z0-9_]+$/i.test(value);
-}
 
 export async function POST(request: NextRequest) {
   let body: ActivityLogBody;
