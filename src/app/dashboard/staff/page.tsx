@@ -1,4 +1,4 @@
-"use client";
+i"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { recordActivity } from "@/lib/activity";
