@@ -507,7 +507,7 @@ export default function DashboardOverview() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="glass-card rounded-2xl p-5 h-36 animate-pulse bg-slate-800/30" />
+            <div key={i} className="glass-card rounded-2xl p-5 h-36 animate-pulse bg-white/90 dark:bg-slate-800/30" />
           ))}
         </div>
       ) : (
@@ -530,7 +530,7 @@ export default function DashboardOverview() {
               <Link
                 key={a.href}
                 href={a.href}
-                className="relative overflow-hidden rounded-3xl p-5 flex flex-col gap-3 group transition-all duration-300 border border-white/10 bg-white/5 hover:bg-white/10 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.85)]"
+                className="relative overflow-hidden rounded-3xl p-5 flex flex-col gap-3 group transition-all duration-300 border border-blue-100 bg-white/95 hover:shadow-[0_16px_40px_-24px_rgba(56,102,255,0.18)] shadow-[0_16px_40px_-24px_rgba(56,102,255,0.12)] dark:border-white/10 dark:bg-med-card dark:hover:shadow-[0_16px_40px_-24px_rgba(15,23,42,0.85)]"
               >
                 <div className={`w-11 h-11 rounded-3xl bg-gradient-to-br ${a.color} flex items-center justify-center shadow-sm shadow-slate-900/30`}>
                   <Icon size={18} className="text-white" />
@@ -559,7 +559,7 @@ export default function DashboardOverview() {
                 <button
                   type="button"
                   onClick={copyPatientId}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-sky-50 hover:bg-sky-100 text-slate-900 transition-all"
                 >
                   <Clipboard size={14} /> Copy ID
                 </button>
@@ -614,7 +614,7 @@ export default function DashboardOverview() {
                 </button>
                 <Link
                   href="/dashboard/settings"
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-50 hover:bg-sky-100 text-slate-900 transition-all"
                 >
                   <Settings size={14} /> Update Profile
                 </Link>
@@ -792,7 +792,7 @@ export default function DashboardOverview() {
             <ul className="divide-y divide-white/5">
               {activity.map((a) => (
                 <li key={a.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-                  <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-med-teal flex items-center justify-center flex-shrink-0">
                     {activityIcon(a.table_name)}
                   </div>
                   <div className="flex-1 min-w-0">
