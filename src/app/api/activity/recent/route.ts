@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getAuthenticatedTenantContext } from "@/lib/auth-context";
 import { normalizeRole } from "@/lib/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -39,29 +40,13 @@ function uniqueAndSort(rows: ActivityRow[], limit: number) {
 export async function GET(request: NextRequest) {
   const limit = getLimit(request);
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: true });
 
-  if (!user) {
-    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  if (context.error) {
+    return NextResponse.json({ error: context.error.message }, { status: context.error.status });
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("users")
-    .select("username, role, account_status")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    return NextResponse.json({ error: "User profile could not be found." }, { status: 404 });
-  }
-
-  if (profile.account_status !== "active") {
-    return NextResponse.json({ error: "This account is inactive." }, { status: 403 });
-  }
-
-  const role = normalizeRole(profile.role);
+  const role = context.role;
 
   try {
     const admin = createAdminClient();
@@ -70,6 +55,7 @@ export async function GET(request: NextRequest) {
       const { data, error } = await admin
         .from("audit_logs")
         .select(SELECT_FIELDS)
+        .eq("hospital_id", context.hospitalId)
         .order("created_at", { ascending: false })
         .limit(limit);
 
@@ -82,7 +68,8 @@ export async function GET(request: NextRequest) {
       admin
         .from("audit_logs")
         .select(SELECT_FIELDS)
-        .eq("username", profile.username)
+        .eq("username", context.profile?.username)
+        .eq("hospital_id", context.hospitalId)
         .order("created_at", { ascending: false })
         .limit(limit),
     ];
@@ -91,7 +78,7 @@ export async function GET(request: NextRequest) {
       const { data: patient } = await admin
         .from("patients")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", context.user?.id)
         .maybeSingle();
 
       if (patient?.id) {
@@ -100,6 +87,7 @@ export async function GET(request: NextRequest) {
             .from("audit_logs")
             .select(SELECT_FIELDS)
             .eq("patient_id", patient.id)
+            .eq("hospital_id", context.hospitalId)
             .order("created_at", { ascending: false })
             .limit(limit)
         );
@@ -118,6 +106,7 @@ export async function GET(request: NextRequest) {
       const { data } = await supabase
         .from("audit_logs")
         .select(SELECT_FIELDS)
+        .eq("hospital_id", context.hospitalId)
         .order("created_at", { ascending: false })
         .limit(limit);
 

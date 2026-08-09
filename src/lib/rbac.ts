@@ -10,7 +10,7 @@ export type Role = (typeof ROLES)[number];
 
 export type DashboardRouteKey =
   | "overview"
-  | "triage"
+  | "aiChat"
   | "patients"
   | "appointments"
   | "pharmacy"
@@ -31,6 +31,7 @@ export type DashboardRoute = {
 
 export const ADMIN_ROLES = ["owner_admin", "hospital_admin"] as const;
 export const CLINICAL_AI_ROLES = ["owner_admin", "hospital_admin", "doctor"] as const;
+export const AI_CHAT_ROLES = ROLES;
 
 export const ROLE_LABELS: Record<Role, string> = {
   owner_admin: "Owner Admin",
@@ -43,7 +44,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const ROLE_DESCRIPTIONS: Record<Role, string> = {
   owner_admin: "Full hospital setup, users, audit, billing, and clinical oversight.",
   hospital_admin: "Operational administration across hospital modules and reporting.",
-  doctor: "Clinical workspace for patients, triage, diagnostics, and appointments.",
+  doctor: "Clinical workspace for patients, diagnostics, appointments, and AI support.",
   staff: "Front-desk and operations workspace for scheduling, stock, lab, and imaging.",
   patient: "Personal care portal for profile, care status, and upcoming follow-up.",
 };
@@ -65,11 +66,11 @@ export const DASHBOARD_ROUTES: readonly DashboardRoute[] = [
     roles: ["owner_admin", "hospital_admin", "doctor", "staff", "patient"],
   },
   {
-    key: "triage",
-    label: "AI Triage",
-    href: "/dashboard/triage",
-    description: "MEWS scoring with optional AI clinical narrative.",
-    roles: ["owner_admin", "hospital_admin", "doctor"],
+    key: "aiChat",
+    label: "AI Chat",
+    href: "/dashboard/ai-chat",
+    description: "Conversational assistant for hospital workflows, documentation, and care support.",
+    roles: ["owner_admin", "hospital_admin", "doctor", "staff", "patient"],
   },
   {
     key: "patients",
@@ -203,6 +204,11 @@ export function getDashboardRedirectPath(value: unknown, requestedPath?: string 
 export function canUseAITriage(value: unknown) {
   const role = normalizeRole(value);
   return CLINICAL_AI_ROLES.includes(role as (typeof CLINICAL_AI_ROLES)[number]);
+}
+
+export function canUseAIChat(value: unknown) {
+  const role = normalizeRole(value);
+  return AI_CHAT_ROLES.includes(role);
 }
 
 function normalizePath(pathname: string) {

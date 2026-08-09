@@ -1,0 +1,53 @@
+
+> temp-next-app@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local, .env
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 34.0s
+  Running TypeScript ...
+  Finished TypeScript in 64s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/26) ...
+  Generating static pages using 3 workers (6/26) 
+  Generating static pages using 3 workers (12/26) 
+  Generating static pages using 3 workers (19/26) 
+Γ£ô Generating static pages using 3 workers (26/26) in 8.5s
+  Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ ╞Æ /api/activity/log
+Γö£ ╞Æ /api/activity/recent
+Γö£ ╞Æ /api/ai/chat
+Γö£ ╞Æ /api/ai/triage
+Γö£ ╞Æ /api/auth/join-hospital
+Γö£ ╞Æ /api/auth/register-admin
+Γö£ ╞Æ /api/health
+Γö£ ╞Æ /api/hospital/invite-token
+Γö£ ╞Æ /api/patients
+Γö£ Γùï /dashboard
+Γö£ Γùï /dashboard/ai-chat
+Γö£ Γùï /dashboard/appointments
+Γö£ Γùï /dashboard/audit
+Γö£ Γùï /dashboard/finance
+Γö£ Γùï /dashboard/lab
+Γö£ Γùï /dashboard/patients
+Γö£ Γùï /dashboard/pharmacy
+Γö£ Γùï /dashboard/radiology
+Γö£ Γùï /dashboard/settings
+Γö£ Γùï /dashboard/staff
+Γö£ Γùï /dashboard/triage
+Γö£ Γùï /login
+Γö£ Γùï /signup/admin
+Γöö Γùï /signup/join
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

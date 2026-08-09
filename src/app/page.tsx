@@ -1,8 +1,6 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { assessTriage, type TriageRiskLevel } from '@/lib/triage'
 import ThemeToggle from '@/components/ThemeToggle'
 import {
   Activity,
@@ -19,41 +17,15 @@ import {
   LogIn,
   UserPlus,
   Sparkles,
-  Info,
   Award,
   Building2,
   Stethoscope,
   ClipboardList,
   UserRound,
+  BrainCircuit,
+  MessageSquare,
+  Send,
 } from 'lucide-react'
-
-function getLandingRisk(level: TriageRiskLevel): { color: string; bg: string; text: string } {
-  if (level === 'Low Risk') {
-    return {
-      color: '#10b981',
-      bg: 'rgba(16, 185, 129, 0.1)',
-      text: 'text-emerald-500 dark:text-emerald-400',
-    }
-  } else if (level === 'Moderate Risk') {
-    return {
-      color: '#f59e0b',
-      bg: 'rgba(245, 158, 11, 0.1)',
-      text: 'text-amber-600 dark:text-amber-400',
-    }
-  } else if (level === 'High Risk') {
-    return {
-      color: '#f97316',
-      bg: 'rgba(249, 115, 22, 0.1)',
-      text: 'text-orange-600 dark:text-orange-400',
-    }
-  } else {
-    return {
-      color: '#ef4444',
-      bg: 'rgba(239, 68, 68, 0.1)',
-      text: 'text-red-600 dark:text-red-400',
-    }
-  }
-}
 
 const ROLE_PREVIEW = [
   {
@@ -64,7 +36,7 @@ const ROLE_PREVIEW = [
   {
     icon: Stethoscope,
     label: 'Doctor',
-    copy: 'Patients, appointments, lab, radiology, and AI-assisted triage in one workspace.',
+    copy: 'Patients, appointments, lab, radiology, and AI chat support in one workspace.',
   },
   {
     icon: ClipboardList,
@@ -79,13 +51,6 @@ const ROLE_PREVIEW = [
 ]
 
 export default function LandingPage() {
-  const [hr, setHr] = useState(75)
-  const [spo2, setSpo2] = useState(98)
-  const [temp, setTemp] = useState(36.8)
-
-  const assessment = assessTriage({ heartRate: hr, spo2, temperature: temp })
-  const risk = getLandingRisk(assessment.riskLevel)
-
   return (
     <div className="relative min-h-screen bg-med-bg text-med-primary overflow-hidden flex flex-col justify-between">
       {/* Navigation Header */}
@@ -126,7 +91,7 @@ export default function LandingPage() {
         {/* Hero Copy */}
         <div className="lg:col-span-6 flex flex-col gap-6 text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-medosBlue/10 border border-medosBlue/20 text-medosBlue text-xs font-semibold uppercase tracking-wider w-fit">
-            <Award className="w-3.5 h-3.5" /> RBAC, audit trails, and AI triage for hospital teams
+            <Award className="w-3.5 h-3.5" /> RBAC, audit trails, and AI chat for hospital teams
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-med-primary leading-[1.1]">
@@ -134,7 +99,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-base md:text-lg text-med-muted leading-relaxed max-w-xl">
-            A role-aware hospital workspace for patient intake, appointments, pharmacy stock, lab orders, radiology records, Naira billing, audit logs, and clinical triage support.
+            A role-aware hospital workspace for patient intake, appointments, pharmacy stock, lab orders, radiology records, Naira billing, audit logs, and conversational AI support.
           </p>
 
           <div className="flex flex-wrap items-center gap-4 mt-2">
@@ -166,120 +131,52 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Live Interactive MEWS Triage Simulation Widget */}
+        {/* AI Chat Preview */}
         <div className="lg:col-span-6 glass-panel p-6 sm:p-8 rounded-2xl relative shadow-2xl overflow-hidden border border-med-border flex flex-col gap-5">
           <div className="absolute top-0 right-0 w-32 h-32 bg-medosBlue/5 rounded-full blur-2xl" />
           
           <div className="flex items-center justify-between border-b border-med-border pb-4">
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-500/80 animate-pulse" />
-              <span className="text-xs font-bold text-med-primary uppercase tracking-widest">Live Clinical Simulator</span>
+              <span className="w-3 h-3 rounded-full bg-medosBlue/80 animate-pulse" />
+              <span className="text-xs font-bold text-med-primary uppercase tracking-widest">AI Chat Workspace</span>
             </div>
-            <span className="text-xs font-mono text-med-muted">triage_assistant.sys</span>
+            <span className="text-xs font-mono text-med-muted">medos_chat.sys</span>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-med-primary font-bold mb-1">
-              <Sparkles className="w-4 h-4 text-medosBlue" /> Adjust Patient Vitals below:
+            <div className="flex items-center gap-2 text-sm text-med-primary font-bold">
+              <Sparkles className="w-4 h-4 text-medosBlue" /> Conversational support for daily hospital work
             </div>
 
-            {/* HR Slider */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-medium">
-                <span className="text-med-muted">Heart Rate (HR)</span>
-                <span className="text-med-primary font-mono">{hr} bpm</span>
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-lg bg-medosBlue/10 text-medosBlue flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="w-4 h-4" />
               </div>
-              <input
-                type="range"
-                min="35"
-                max="150"
-                value={hr}
-                onChange={(e) => setHr(Number(e.target.value))}
-                className="w-full h-1 bg-med-border rounded-lg appearance-none cursor-pointer accent-medosBlue"
-              />
+              <div className="rounded-2xl rounded-tl-sm bg-med-card border border-med-border px-4 py-3 text-sm text-med-primary shadow-sm">
+                Draft a concise update for a patient whose lab result is still pending.
+              </div>
             </div>
 
-            {/* SpO2 Slider */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-medium">
-                <span className="text-med-muted">Oxygen Saturation (SpO₂)</span>
-                <span className="text-med-primary font-mono">{spo2} %</span>
+            <div className="flex gap-3 justify-end">
+              <div className="rounded-2xl rounded-tr-sm bg-medosBlue text-white px-4 py-3 text-sm shadow-sm max-w-[85%]">
+                Tell the patient the care team is waiting for the final lab review, avoid clinical interpretation, and share when they should call back.
               </div>
-              <input
-                type="range"
-                min="80"
-                max="100"
-                value={spo2}
-                onChange={(e) => setSpo2(Number(e.target.value))}
-                className="w-full h-1 bg-med-border rounded-lg appearance-none cursor-pointer accent-medosBlue"
-              />
             </div>
 
-            {/* Temp Slider */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-medium">
-                <span className="text-med-muted">Body Temperature</span>
-                <span className="text-med-primary font-mono">{temp.toFixed(1)} °C</span>
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-lg bg-med-teal/10 text-med-teal flex items-center justify-center flex-shrink-0">
+                <BrainCircuit className="w-4 h-4" />
               </div>
-              <input
-                type="range"
-                min="34"
-                max="41"
-                step="0.1"
-                value={temp}
-                onChange={(e) => setTemp(Number(e.target.value))}
-                className="w-full h-1 bg-med-border rounded-lg appearance-none cursor-pointer accent-medosBlue"
-              />
+              <div className="rounded-2xl rounded-tl-sm bg-med-card border border-med-border px-4 py-3 text-sm text-med-primary shadow-sm">
+                Your lab sample is still being reviewed by the clinical team. We will notify you once the result has been checked and released. If your symptoms worsen or you need urgent help, contact the hospital immediately.
+              </div>
             </div>
           </div>
 
-          {/* MEWS Dynamic Results Panel */}
-          <div
-            className="rounded-xl p-5 border transition-all duration-300 flex flex-col gap-4 mt-2"
-            style={{
-              backgroundColor: risk.bg,
-              borderColor: risk.color + '20'
-            }}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: risk.color }}
-                />
-                <div>
-                  <h4 className="text-sm font-bold text-med-primary leading-none">{assessment.riskLevel}</h4>
-                  <span className="text-[10px] text-med-muted">MEWS Score Algorithm</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <span
-                  className="text-2xl font-black font-mono tracking-tight"
-                  style={{ color: risk.color }}
-                >
-                  {assessment.mewsScore}
-                </span>
-                <span className="text-xs text-med-muted font-bold"> / 12</span>
-              </div>
-            </div>
-
-            {/* Progress indicator bar */}
-            <div>
-              <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500 ease-out"
-                  style={{
-                    width: `${(assessment.mewsScore / 12) * 100}%`,
-                    backgroundColor: risk.color
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Clinical Recommendation Text */}
-            <div className="text-xs text-med-primary bg-slate-100/50 dark:bg-slate-950/40 rounded-lg p-3 border border-med-border flex gap-2">
-              <Info className="w-4 h-4 text-medosBlue flex-shrink-0 mt-0.5" />
-              <p className="leading-relaxed">{assessment.recommendation}</p>
+          <div className="flex items-center gap-3 rounded-xl border border-med-border bg-med-card px-4 py-3">
+            <div className="flex-1 text-sm text-med-muted">Ask MedOS AI...</div>
+            <div className="w-9 h-9 rounded-lg bg-medosBlue text-white flex items-center justify-center">
+              <Send className="w-4 h-4" />
             </div>
           </div>
         </div>
@@ -308,8 +205,8 @@ export default function LandingPage() {
             },
             {
               icon: Activity,
-              title: 'MEWS Triage Engine',
-              desc: 'Stratify emergency patient queues using the Modified Early Warning Score protocol to optimize ward priorities.'
+              title: 'AI Chat Workspace',
+              desc: 'Ask operational, documentation, patient communication, and care-support questions from a protected dashboard section.'
             },
             {
               icon: Users,
@@ -421,4 +318,3 @@ export default function LandingPage() {
     </div>
   )
 }
-

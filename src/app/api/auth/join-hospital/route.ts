@@ -1,54 +1,27 @@
-import { randomInt } from 'crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { getEnvErrorPayload } from '@/lib/server-env'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  cleanString,
+  cleanAccessToken,
+  makeUsername,
+  makePersonalId,
+  makeAccessToken,
+  errorMessage,
+  isWorkspaceRole,
+} from '@/lib/api-utils'
 
 export const runtime = 'nodejs'
-
-const WORKSPACE_ROLES = ['doctor', 'staff', 'patient'] as const
-
-type WorkspaceRole = (typeof WORKSPACE_ROLES)[number]
 
 type JoinHospitalBody = {
   fullName?: string
   email?: string
   password?: string
-  role?: WorkspaceRole
+  role?: string
   accessToken?: string
   phoneNumber?: string
   specialization?: string
-}
-
-function cleanString(value: unknown) {
-  return typeof value === 'string' ? value.trim() : ''
-}
-
-function cleanAccessToken(value: unknown) {
-  return cleanString(value).toUpperCase().replace(/[^A-Z0-9]/g, '')
-}
-
-function makeUsername(email: string) {
-  const base = email
-    .split('@')[0]
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '')
-
-  return `${base || 'user'}_${randomInt(100000, 999999)}`
-}
-
-function makePersonalId() {
-  return `PAT-${randomInt(100000, 999999)}`
-}
-
-function isWorkspaceRole(value: unknown): value is WorkspaceRole {
-  return typeof value === 'string' && WORKSPACE_ROLES.includes(value as WorkspaceRole)
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'An unexpected database error occurred.'
 }
 
 export async function GET() {

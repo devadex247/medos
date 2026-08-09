@@ -14,8 +14,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MedOS AI - Predictive Hospital Management System",
-  description: "Next-generation, serverless AI co-pilot for clinical workflows, triage prediction, and hospital operations.",
+  title: "MedOS AI - AI Hospital Management System",
+  description: "Next-generation, serverless AI chat co-pilot for clinical workflows and hospital operations.",
 };
 
 export default function RootLayout({
@@ -57,4 +57,3 @@ export default function RootLayout({
     </html>
   );
 }
-

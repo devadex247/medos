@@ -1,3 +1,4 @@
+// src/app/dashboard/layout.tsx
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -32,16 +33,17 @@ import {
   X,
   ChevronRight,
   ChevronDown,
-  BrainCircuit,
   Bell,
   Settings,
   Clock,
   UserCircle,
+  BrainCircuit,
 } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 const NAV_ICONS: Record<DashboardRouteKey, React.ElementType> = {
   overview: LayoutDashboard,
-  triage: BrainCircuit,
+  aiChat: BrainCircuit,
   patients: Users,
   appointments: CalendarDays,
   pharmacy: Pill,
@@ -60,7 +62,7 @@ const ACTIVITY_HREFS: Record<string, string> = {
   lab_orders: "/dashboard/lab",
   radiology_images: "/dashboard/radiology",
   staff_schedules: "/dashboard/staff",
-  patient_vitals: "/dashboard/triage",
+  patient_vitals: "/dashboard/patients",
   users: "/dashboard/settings",
   hospitals: "/dashboard/settings",
   hospital_memberships: "/dashboard/staff",
@@ -76,11 +78,7 @@ type Profile = {
   full_name?: string;
 };
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
@@ -103,9 +101,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const loadProfile = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push("/login");
         return;
@@ -120,7 +116,6 @@ export default function DashboardLayout({
         router.push("/login?reason=profile");
         return;
       }
-
       setProfile({
         username: data.username,
         full_name: data.full_name ?? undefined,
@@ -136,7 +131,6 @@ export default function DashboardLayout({
     const handleActivityCreated = () => {
       void loadRecentActivity();
     };
-
     window.addEventListener("medos:activity-created", handleActivityCreated);
     return () => window.removeEventListener("medos:activity-created", handleActivityCreated);
   }, [loadRecentActivity]);
@@ -144,26 +138,21 @@ export default function DashboardLayout({
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
       const target = event.target as Node;
-
       if (notificationsRef.current && !notificationsRef.current.contains(target)) {
         setNotificationsOpen(false);
       }
-
       if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setUserMenuOpen(false);
       }
     };
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setNotificationsOpen(false);
         setUserMenuOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
-
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
@@ -181,10 +170,10 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-med-bg">
-        <div className="flex flex-col items-center gap-4">
+      <div className="flex h-screen items-center justify-center bg-dashboard-shell text-white">
+        <div className="flex flex-col items-center gap-4 rounded-3xl bg-white/95 border border-blue-100/60 p-8 shadow-[0_24px_80px_-48px_rgba(56,102,255,0.12)] dark:bg-white/5 dark:border-white/10 dark:shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)]">
           <div className="w-12 h-12 border-2 border-med-teal border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Loading MedOS AI…</p>
+          <p className="text-slate-900 text-sm dark:text-slate-200">Loading MedOS AI…</p>
         </div>
       </div>
     );
@@ -193,67 +182,58 @@ export default function DashboardLayout({
   return (
     <>
       <AutoLogoutHandler />
-      <div className="flex h-screen overflow-hidden bg-med-bg">
+      <div className="flex h-screen overflow-hidden bg-dashboard-shell text-white">
         {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
         <aside
           className={`
-            flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden
-            border-r border-med-border bg-med-header
+            flex flex-col transition-width duration-300 ease-in-out overflow-hidden border-r border-blue-100/70 bg-white/95 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(56,102,255,0.12)]
             ${sidebarOpen ? "w-64" : "w-16"}
           `}
         >
-          {/* logo */}
+          {/* Logo */}
           <div className="flex items-center gap-3 h-16 px-4 border-b border-med-border flex-shrink-0">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-med-teal to-med-accent flex items-center justify-center flex-shrink-0">
-              <BrainCircuit size={16} className="text-white" />
+              <LayoutDashboard size={16} className="text-white" />
             </div>
             {sidebarOpen && (
-              <span className="font-bold text-med-primary text-sm tracking-wide whitespace-nowrap">
+              <span className="font-bold text-slate-900 text-sm tracking-wide whitespace-nowrap dark:text-white">
                 MedOS AI
               </span>
             )}
           </div>
 
-          {/* nav links */}
+          {/* Nav links – refined spacing and hover */}
           <nav className="flex-1 py-4 overflow-y-auto overflow-x-hidden">
-            <ul className="space-y-0.5 px-2">
+            <ul className="space-y-1 px-2">
               {allowedNav.map((item) => {
                 const Icon = NAV_ICONS[item.key];
-                const active =
+                const isActive =
                   item.href === "/dashboard"
                     ? pathname === "/dashboard"
                     : pathname.startsWith(item.href);
                 return (
-                  <li key={item.href}>
+                  <li key={item.href} className="relative">
                     <Link
                       href={item.href}
                       title={item.label}
-                        className={`
-                          flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
-                          transition-all duration-200 group relative overflow-hidden
-                          ${
-                            active
-                              ? "bg-med-teal/10 text-med-teal shadow-sm shadow-med-teal/10"
-                              : "text-med-muted hover:text-med-primary hover:bg-slate-100 dark:hover:bg-white/5"
-                          }
-                        `}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`
+                        flex items-center gap-3 rounded-3xl px-3 py-3 text-sm font-semibold transition-all duration-200 group
+                        ${isActive
+                          ? "bg-gradient-to-r from-med-teal/20 to-med-accent/20 text-white shadow-[0_18px_40px_-28px_rgba(56,189,248,0.8)]"
+                          : "text-slate-600 hover:text-white hover:bg-blue-50 dark:text-slate-300 dark:hover:bg-white/10"}
+                      `}
                     >
-                      {/* active indicator bar */}
-                      {active && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-med-teal rounded-r-full" />
+                      {/* Active indicator bar */}
+                      {isActive && (
+                        <span className="absolute left-0 top-0 h-full w-1 bg-med-teal rounded-r-md" />
                       )}
                       <Icon
                         size={18}
-                        className={`flex-shrink-0 transition-transform duration-200 ${
-                          active ? "text-med-teal" : "group-hover:scale-110"
-                        }`}
+                        className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "text-med-teal" : "group-hover:scale-110"}`}
                       />
-                      {sidebarOpen && (
-                        <span className="truncate">{item.label}</span>
-                      )}
-                      {active && sidebarOpen && (
-                        <ChevronRight size={14} className="ml-auto text-med-teal/60" />
-                      )}
+                      {sidebarOpen && <span className="truncate">{item.label}</span>}
+                      {isActive && sidebarOpen && <ChevronRight size={14} className="ml-auto text-med-teal/60" />}
                     </Link>
                   </li>
                 );
@@ -261,31 +241,25 @@ export default function DashboardLayout({
             </ul>
           </nav>
 
-          {/* user block */}
+          {/* User block */}
           <div className="border-t border-med-border p-3 flex-shrink-0">
             {sidebarOpen ? (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-med-teal/30 to-med-accent/30 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                  {profile?.full_name?.[0]?.toUpperCase() ??
-                    profile?.username?.[0]?.toUpperCase() ??
-                    "?"}
+                  {profile?.full_name?.[0]?.toUpperCase() ?? profile?.username?.[0]?.toUpperCase() ?? "?"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-med-primary truncate">
                     {profile?.full_name ?? profile?.username}
                   </p>
-                  <p
-                    className={`text-xs truncate ${
-                      ROLE_COLORS[role] ?? "text-med-muted"
-                    }`}
-                  >
+                  <p className={`text-xs truncate ${ROLE_COLORS[role] ?? "text-med-muted"}`}>
                     {getRoleLabel(role)}
                   </p>
                 </div>
                 <button
                   onClick={handleSignOut}
                   title="Sign out"
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all duration-200"
+                  className="p-1.5 rounded-lg text-slate-300 hover:text-red-300 hover:bg-red-400/10 transition-all duration-200"
                 >
                   <LogOut size={15} />
                 </button>
@@ -304,8 +278,8 @@ export default function DashboardLayout({
 
         {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* top bar */}
-          <header className="h-16 flex items-center gap-4 px-6 border-b border-med-border bg-med-header/80 backdrop-blur-sm flex-shrink-0">
+          {/* Top bar */}
+          <header className="h-16 flex items-center gap-4 px-6 border-b border-white/10 bg-white/10 backdrop-blur-xl flex-shrink-0 shadow-sm">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 rounded-lg text-med-muted hover:text-med-primary hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200"
@@ -313,21 +287,11 @@ export default function DashboardLayout({
             >
               {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
-
-            {/* breadcrumb */}
-            <div className="flex items-center gap-1.5 text-sm text-med-muted">
-              <span className="text-med-muted/60">MedOS</span>
-              <ChevronRight size={14} className="text-med-border" />
-              <span className="text-med-primary font-semibold capitalize">
-                {activeRoute.label}
-              </span>
-            </div>
-
+            {/* Breadcrumbs */}
+            <Breadcrumbs />
             <div className="ml-auto flex items-center gap-3">
-              {/* Theme Toggle */}
               <ThemeToggle />
-
-              {/* notification bell */}
+              {/* Notification bell */}
               <div ref={notificationsRef} className="relative">
                 <button
                   type="button"
@@ -347,7 +311,6 @@ export default function DashboardLayout({
                     </span>
                   )}
                 </button>
-
                 {notificationsOpen && (
                   <div className="absolute right-0 top-11 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-med-border bg-med-card shadow-2xl shadow-black/10 dark:shadow-black/40 overflow-hidden">
                     <div className="px-4 py-3 border-b border-med-border flex items-center justify-between">
@@ -360,7 +323,6 @@ export default function DashboardLayout({
                         Refresh
                       </button>
                     </div>
-
                     <div className="max-h-80 overflow-y-auto">
                       {activityLoading ? (
                         <div className="px-4 py-6 text-sm text-med-muted">Loading activity...</div>
@@ -383,7 +345,6 @@ export default function DashboardLayout({
                         ))
                       )}
                     </div>
-
                     <Link
                       href={role === "owner_admin" || role === "hospital_admin" ? "/dashboard/audit" : "/dashboard"}
                       onClick={() => setNotificationsOpen(false)}
@@ -394,8 +355,7 @@ export default function DashboardLayout({
                   </div>
                 )}
               </div>
-
-              {/* avatar */}
+              {/* Profile dropdown */}
               <div ref={userMenuRef} className="relative">
                 <button
                   type="button"
@@ -408,34 +368,24 @@ export default function DashboardLayout({
                   className="h-9 flex items-center gap-2 rounded-lg px-1.5 pr-2 text-med-muted hover:text-med-primary hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
                 >
                   <span className="w-8 h-8 rounded-full bg-gradient-to-br from-med-teal/40 to-med-accent/40 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                    {profile?.full_name?.[0]?.toUpperCase() ??
-                      profile?.username?.[0]?.toUpperCase() ??
-                      "?"}
+                    {profile?.full_name?.[0]?.toUpperCase() ?? profile?.username?.[0]?.toUpperCase() ?? "?"}
                   </span>
                   <span className="hidden sm:block max-w-32 truncate text-xs font-semibold">
                     {profile?.full_name ?? profile?.username}
                   </span>
                   <ChevronDown size={14} className="hidden sm:block text-med-muted/60" />
                 </button>
-
                 {userMenuOpen && (
                   <div className="absolute right-0 top-11 z-50 w-64 rounded-xl border border-med-border bg-med-card shadow-2xl shadow-black/10 dark:shadow-black/40 overflow-hidden">
                     <div className="px-4 py-3 border-b border-med-border flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-med-teal/40 to-med-accent/40 flex items-center justify-center text-xs font-bold text-white">
-                        {profile?.full_name?.[0]?.toUpperCase() ??
-                          profile?.username?.[0]?.toUpperCase() ??
-                          "?"}
+                        {profile?.full_name?.[0]?.toUpperCase() ?? profile?.username?.[0]?.toUpperCase() ?? "?"}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-med-primary truncate">
-                          {profile?.full_name ?? profile?.username}
-                        </p>
-                        <p className={`text-xs truncate ${ROLE_COLORS[role] ?? "text-med-muted"}`}>
-                          {getRoleLabel(role)}
-                        </p>
+                        <p className="text-sm font-semibold text-med-primary truncate">{profile?.full_name ?? profile?.username}</p>
+                        <p className={`text-xs truncate ${ROLE_COLORS[role] ?? "text-med-muted"}`}> {getRoleLabel(role)} </p>
                       </div>
                     </div>
-
                     <Link
                       href="/dashboard/settings"
                       onClick={() => setUserMenuOpen(false)}
@@ -463,7 +413,7 @@ export default function DashboardLayout({
             </div>
           </header>
 
-          {/* page content */}
+          {/* Page content */}
           <main className="flex-1 overflow-y-auto p-6">{children}</main>
         </div>
       </div>

@@ -120,7 +120,7 @@ const EMPTY_PATIENT_PORTAL_DATA: PatientPortalData = {
 
 const ACTION_ICONS: Record<DashboardRouteKey, React.ElementType> = {
   overview: Activity,
-  triage: BrainCircuit,
+  aiChat: BrainCircuit,
   patients: Users,
   appointments: CalendarDays,
   pharmacy: Pill,
@@ -134,7 +134,7 @@ const ACTION_ICONS: Record<DashboardRouteKey, React.ElementType> = {
 
 const ACTION_COLORS: Record<DashboardRouteKey, string> = {
   overview: "from-slate-600 to-slate-800",
-  triage: "from-med-teal to-sky-600",
+  aiChat: "from-med-teal to-indigo-600",
   patients: "from-emerald-500 to-teal-600",
   appointments: "from-cyan-500 to-blue-600",
   pharmacy: "from-amber-500 to-orange-600",
@@ -152,26 +152,25 @@ function StatCard({ kpi, delay }: { kpi: KPI; delay: number }) {
   return (
     <Link
       href={kpi.href}
-      className="glass-card rounded-2xl p-5 flex flex-col gap-4 group"
+      className="glass-card rounded-3xl p-6 flex flex-col gap-4 group"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-start justify-between">
         <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center ${kpi.color} bg-current/10`}
-          style={{ background: `color-mix(in srgb, currentColor 12%, transparent)` }}
+          className={`w-12 h-12 rounded-3xl flex items-center justify-center border border-blue-100 shadow-[0_18px_40px_-30px_rgba(56,189,248,0.35)] bg-gradient-to-br from-sky-500 to-blue-600 ${kpi.color}`}
         >
-          <Icon size={20} className={kpi.color} />
+          <Icon size={20} className="text-white" />
         </div>
         <ArrowUpRight
           size={16}
-          className="text-slate-600 group-hover:text-slate-300 transition-colors duration-200"
+          className="text-slate-500 group-hover:text-blue-700 transition-colors duration-200"
         />
       </div>
       <div>
-        <p className="text-2xl font-bold text-white tabular-nums">{kpi.value}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{kpi.label}</p>
+        <p className="text-3xl font-bold text-slate-900 tabular-nums">{kpi.value}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{kpi.label}</p>
       </div>
-      <p className="text-xs text-slate-500">{kpi.sub}</p>
+      <p className="text-xs text-slate-400">{kpi.sub}</p>
     </Link>
   );
 }
@@ -202,9 +201,9 @@ function buildRoleKpis(
     label: "High-risk Vitals",
     value: counts.highRiskVitals,
     sub: "High or critical MEWS records",
-    icon: BrainCircuit,
+    icon: HeartPulse,
     color: "text-rose-400",
-    href: "/dashboard/triage",
+    href: "/dashboard/patients",
   };
 
   const patients: KPI = {
@@ -508,7 +507,7 @@ export default function DashboardOverview() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="glass-card rounded-2xl p-5 h-36 animate-pulse bg-slate-800/30" />
+            <div key={i} className="glass-card rounded-2xl p-5 h-36 animate-pulse bg-white/90 dark:bg-slate-800/30" />
           ))}
         </div>
       ) : (
@@ -521,7 +520,7 @@ export default function DashboardOverview() {
 
       {/* ── Quick Actions ──────────────────────────────────────────── */}
       <section>
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
           Quick Actions
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -531,17 +530,16 @@ export default function DashboardOverview() {
               <Link
                 key={a.href}
                 href={a.href}
-                className="relative overflow-hidden rounded-xl p-4 flex flex-col gap-3 group hover:scale-[1.02] transition-transform duration-200"
-                style={{ background: "rgba(15,22,38,0.6)", border: "1px solid rgba(255,255,255,0.06)" }}
+                className="relative overflow-hidden rounded-3xl p-5 flex flex-col gap-3 group transition-all duration-300 border border-blue-100 bg-white/95 hover:shadow-[0_16px_40px_-24px_rgba(56,102,255,0.18)] shadow-[0_16px_40px_-24px_rgba(56,102,255,0.12)] dark:border-white/10 dark:bg-med-card dark:hover:shadow-[0_16px_40px_-24px_rgba(15,23,42,0.85)]"
               >
-                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${a.color} flex items-center justify-center`}>
+                <div className={`w-11 h-11 rounded-3xl bg-gradient-to-br ${a.color} flex items-center justify-center shadow-sm shadow-slate-900/30`}>
                   <Icon size={18} className="text-white" />
                 </div>
-                <span className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">
+                <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
                   {a.label}
                 </span>
                 <span
-                  className={`absolute -bottom-4 -right-4 w-20 h-20 rounded-full bg-gradient-to-br ${a.color} opacity-10 group-hover:opacity-20 transition-opacity`}
+                  className={`absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-gradient-to-br ${a.color} opacity-10 group-hover:opacity-20 transition-opacity`}
                 />
               </Link>
             );
@@ -561,7 +559,7 @@ export default function DashboardOverview() {
                 <button
                   type="button"
                   onClick={copyPatientId}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-sky-50 hover:bg-sky-100 text-slate-900 transition-all"
                 >
                   <Clipboard size={14} /> Copy ID
                 </button>
@@ -616,7 +614,7 @@ export default function DashboardOverview() {
                 </button>
                 <Link
                   href="/dashboard/settings"
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-50 hover:bg-sky-100 text-slate-900 transition-all"
                 >
                   <Settings size={14} /> Update Profile
                 </Link>
@@ -794,7 +792,7 @@ export default function DashboardOverview() {
             <ul className="divide-y divide-white/5">
               {activity.map((a) => (
                 <li key={a.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-                  <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-med-teal flex items-center justify-center flex-shrink-0">
                     {activityIcon(a.table_name)}
                   </div>
                   <div className="flex-1 min-w-0">

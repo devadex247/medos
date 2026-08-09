@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getAuthenticatedTenantContext } from "@/lib/auth-context";
 import { normalizeRole } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
+import { cleanString, cleanOptionalNumber, isTableName } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
 
@@ -14,20 +16,6 @@ type ActivityLogBody = {
   details?: string | null;
 };
 
-function cleanString(value: unknown, maxLength: number) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
-
-function cleanOptionalNumber(value: unknown) {
-  if (value === null || value === undefined || value === "") return null;
-
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue : null;
-}
-
-function isTableName(value: string) {
-  return /^[a-z0-9_]+$/i.test(value);
-}
 
 export async function POST(request: NextRequest) {
   let body: ActivityLogBody;
@@ -53,33 +41,18 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: true });
 
-  if (!user) {
-    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  if (context.error) {
+    return NextResponse.json({ error: context.error.message }, { status: context.error.status });
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("users")
-    .select("username, role, account_status")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    return NextResponse.json({ error: "User profile could not be found." }, { status: 404 });
-  }
-
-  if (profile.account_status !== "active") {
-    return NextResponse.json({ error: "This account is inactive." }, { status: 403 });
-  }
-
-  const role = normalizeRole(profile.role);
+  const role = normalizeRole(context.profile?.role);
   const { error } = await supabase
     .from("audit_logs")
     .insert({
-      username: profile.username,
+      username: context.profile?.username,
+      hospital_id: context.hospitalId,
       action,
       action_type: actionType || role,
       table_name: tableName,

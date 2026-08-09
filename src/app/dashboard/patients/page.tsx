@@ -17,6 +17,12 @@ import {
   MapPin,
 } from "lucide-react";
 
+// New imports for editing
+import PatientEditForm from "@/components/PatientEditForm";
+
+// Role-based edit visibility
+const EDIT_ROLES = ["owner_admin", "hospital_admin", "doctor", "staff"];
+
 type Patient = {
   id: number;
   name: string;
@@ -55,7 +61,7 @@ async function readPatientCreateResponse(response: Response) {
   }
 
   const text = await response.text();
-  const message = response.status === 404 || text.trim().startsWith("<!DOCTYPE html")
+  const message = response.status === 404 || text.trim().startsWith("<!DOCTYPE html>")
     ? "Patient creation endpoint was not found in the running app. The deployed build may still be updating."
     : "Patient creation endpoint did not return a readable response.";
 
@@ -72,6 +78,20 @@ export default function PatientsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Patient | null>(null);
+  const [editPatient, setEditPatient] = useState<Patient | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+
+  // Load profile for role checks
+  useEffect(() => {
+    const loadProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("users").select("username, role, full_name").eq("id", user.id).single();
+      setProfile(data);
+    };
+    loadProfile();
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,7 +107,9 @@ export default function PatientsPage() {
     setLoading(false);
   }, [search]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleSave = async () => {
     if (!form.name || !form.personal_id) {
@@ -113,6 +135,15 @@ export default function PatientsPage() {
     setSaving(false);
     setShowModal(false);
     setForm(EMPTY_FORM);
+    load();
+  };
+
+  const openEdit = (patient: Patient) => {
+    setEditPatient(patient);
+    setEditOpen(true);
+  };
+
+  const refreshAfterEdit = () => {
     load();
   };
 
@@ -162,7 +193,7 @@ export default function PatientsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  {["Name", "Patient ID", "Gender", "Age", "Phone", "Added"].map((h) => (
+                  {["Name", "Patient ID", "Gender", "Age", "Phone", "Added", "Actions"].map((h) => (
                     <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       {h}
                     </th>
@@ -171,11 +202,7 @@ export default function PatientsPage() {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {patients.map((p) => (
-                  <tr
-                    key={p.id}
-                    onClick={() => setSelected(p)}
-                    className="hover:bg-white/[0.025] transition-colors cursor-pointer"
-                  >
+                  <tr key={p.id} className="hover:bg-white/[0.025] transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-400">
@@ -189,6 +216,16 @@ export default function PatientsPage() {
                     <td className="px-5 py-3.5 text-slate-400">{age(p.date_of_birth)}</td>
                     <td className="px-5 py-3.5 text-slate-400">{p.phone ?? "—"}</td>
                     <td className="px-5 py-3.5 text-slate-500 text-xs">{new Date(p.created_at).toLocaleDateString()}</td>
+                    <td className="px-5 py-3.5">
+                      {profile && EDIT_ROLES.includes(profile.role) && (
+                        <button
+                          onClick={() => openEdit(p)}
+                          className="text-med-teal hover:underline text-sm"
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -197,7 +234,7 @@ export default function PatientsPage() {
         )}
       </div>
 
-      {/* ── ADD PATIENT MODAL ─────────────────────────────────────────── */}
+      {/* Add Patient Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}>
           <div className="glass-panel rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -209,8 +246,7 @@ export default function PatientsPage() {
             </div>
             <div className="px-6 py-5 space-y-4">
               {error && <p className="text-sm text-red-400 bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
-              {[
-                { label: "Full Name *", key: "name", type: "text" },
+              {[{ label: "Full Name *", key: "name", type: "text" },
                 { label: "Patient ID *", key: "personal_id", type: "text" },
                 { label: "Date of Birth", key: "date_of_birth", type: "date" },
                 { label: "Phone", key: "phone", type: "tel" },
@@ -221,8 +257,8 @@ export default function PatientsPage() {
                 <div key={f.key}>
                   <label className="block text-xs text-slate-400 mb-1.5">{f.label}</label>
                   <input
-                    type={f.type}
-                    value={(form as Record<string, string>)[f.key]}
+                    type={f.type as any}
+                    value={(form as any)[f.key]}
                     onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 placeholder-slate-600 focus:border-med-teal outline-none transition-colors"
                   />
@@ -243,7 +279,9 @@ export default function PatientsPage() {
                     <option>Other</option>
                     <option>Prefer not to say</option>
                   </select>
-                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width={14} height={14}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
               </div>
             </div>
@@ -251,11 +289,7 @@ export default function PatientsPage() {
               <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all">
                 Cancel
               </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500 hover:bg-emerald-400 text-white transition-all disabled:opacity-50"
-              >
+              <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500 hover:bg-emerald-400 text-white transition-all disabled:opacity-50">
                 {saving && <Loader2 size={14} className="animate-spin" />}
                 {saving ? "Saving…" : "Add Patient"}
               </button>
@@ -264,45 +298,9 @@ export default function PatientsPage() {
         </div>
       )}
 
-      {/* ── PATIENT DETAIL DRAWER ─────────────────────────────────────── */}
-      {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="w-full max-w-sm h-full glass-panel border-l border-white/8 overflow-y-auto flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
-              <h2 className="text-base font-semibold text-white">Patient Details</h2>
-              <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all">
-                <X size={16} />
-              </button>
-            </div>
-            <div className="flex-1 px-5 py-6 space-y-5">
-              <div className="flex flex-col items-center gap-3 pb-5 border-b border-white/8">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-2xl font-bold text-emerald-400">
-                  {selected.name[0]?.toUpperCase()}
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-white">{selected.name}</p>
-                  <p className="text-xs font-mono text-slate-400">{selected.personal_id}</p>
-                </div>
-              </div>
-              {[
-                { Icon: UserCircle2, label: "Gender", value: selected.gender },
-                { Icon: Calendar, label: "Age", value: age(selected.date_of_birth) },
-                { Icon: Phone, label: "Phone", value: selected.phone },
-                { Icon: Mail, label: "Email", value: selected.email },
-                { Icon: MapPin, label: "Address", value: selected.address },
-                { Icon: AlertCircle, label: "Allergies", value: selected.allergies },
-              ].map(({ Icon, label, value }) => (
-                <div key={label} className="flex items-start gap-3">
-                  <Icon size={16} className="text-slate-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-slate-500">{label}</p>
-                    <p className="text-sm text-slate-200">{value || "—"}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* Edit Patient Modal */}
+      {editPatient && (
+        <PatientEditForm patient={editPatient} isOpen={editOpen} onClose={() => setEditOpen(false)} onUpdated={refreshAfterEdit} />
       )}
     </div>
   );

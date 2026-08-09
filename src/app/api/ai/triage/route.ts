@@ -1,7 +1,8 @@
 import OpenAI from "openai";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { canUseAITriage, normalizeRole } from "@/lib/rbac";
+import { getAuthenticatedTenantContext } from "@/lib/auth-context";
+import { canUseAITriage } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 import { assessTriage, isValidTriageVitals, type TriageAssessment, type TriageVitals } from "@/lib/triage";
 
@@ -24,36 +25,13 @@ const OPENAI_MODEL = process.env.OPENAI_TRIAGE_MODEL ?? "gpt-4o";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const context = await getAuthenticatedTenantContext(supabase, { requireHospital: true });
 
-  if (!user) {
-    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  if (context.error) {
+    return NextResponse.json({ error: context.error.message }, { status: context.error.status });
   }
 
-  // Extract tenant context (hospital_id) from the user metadata to ensure isolation
-  const userHospitalId = user.user_metadata?.hospital_id;
-
-  const { data: profile } = await supabase
-    .from("users")
-    .select("role, account_status, hospital_id")
-    .eq("id", user.id)
-    .single();
-
-  const activeHospitalId = profile?.hospital_id ?? userHospitalId;
-
-  if (!activeHospitalId) {
-    return NextResponse.json({ error: "Tenant context could not be resolved." }, { status: 400 });
-  }
-
-  const role = normalizeRole(profile?.role ?? user.user_metadata?.role);
-
-  if (profile?.account_status !== "active") {
-    return NextResponse.json({ error: "This account is inactive." }, { status: 403 });
-  }
-
-  if (!canUseAITriage(role)) {
+  if (!canUseAITriage(context.role)) {
     return NextResponse.json({ error: "Your role cannot run AI triage." }, { status: 403 });
   }
 
@@ -88,7 +66,7 @@ export async function POST(request: NextRequest) {
     .from("patients")
     .select("id, name, personal_id, hospital_id")
     .eq("id", patientId)
-    .eq("hospital_id", activeHospitalId)
+    .eq("hospital_id", context.hospitalId)
     .maybeSingle();
 
   if (patientError || !patient) {

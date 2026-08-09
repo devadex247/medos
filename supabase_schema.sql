@@ -43,6 +43,10 @@ create table if not exists public.hospitals (
     updated_at      timestamptz not null default now()
 );
 
+-- Keep older installations compatible: CREATE TABLE IF NOT EXISTS does not add
+-- columns to an existing users table.
+alter table public.users add column if not exists hospital_id bigint;
+
 -- Add foreign key constraint to users now that hospitals table is created
 alter table public.users drop constraint if exists fk_users_hospital;
 alter table public.users add constraint fk_users_hospital foreign key (hospital_id) references public.hospitals(id) on delete set null;
@@ -588,7 +592,7 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.users (id, username, email, full_name, phone_number, role, account_status)
+  insert into public.users (id, username, email, full_name, phone_number, role, hospital_id, account_status)
   values (
     new.id,
     coalesce(
@@ -599,6 +603,11 @@ begin
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
     new.raw_user_meta_data->>'phone_number',
     coalesce(new.raw_user_meta_data->>'role', 'patient'),
+    case
+      when new.raw_user_meta_data->>'hospital_id' ~ '^[0-9]+$'
+      then (new.raw_user_meta_data->>'hospital_id')::bigint
+      else null
+    end,
     'active'
   )
   on conflict (id) do nothing;

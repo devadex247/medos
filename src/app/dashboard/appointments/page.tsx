@@ -4,16 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { recordActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/client";
 import {
-  CalendarDays,
-  Search,
-  Plus,
-  X,
-  Loader2,
-  AlertCircle,
-  ChevronDown,
-  CheckCircle2,
-  Clock,
-  XCircle,
+  CalendarDays, Search, Plus, X, Loader2, AlertCircle,
+  ChevronDown, CheckCircle2, Clock, XCircle, Pencil,
 } from "lucide-react";
 
 type Appointment = {
@@ -21,6 +13,8 @@ type Appointment = {
   date: string;
   status: string;
   notes: string | null;
+  doctor_id?: number;
+  patient_id?: number;
   doctors: { name: string; specialization: string } | null;
   patients: { name: string; personal_id: string } | null;
 };
@@ -42,6 +36,8 @@ const STATUS_ICONS: Record<string, React.ReactElement> = {
   "No-show": <AlertCircle size={12} />,
 };
 
+const EMPTY_FORM = { doctor_id: "", patient_id: "", date: "", status: "Scheduled", notes: "" };
+
 export default function AppointmentsPage() {
   const supabase = createClient();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -50,21 +46,26 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({
-    doctor_id: "",
-    patient_id: "",
-    date: "",
-    status: "Scheduled",
-    notes: "",
-  });
+  const [editTarget, setEditTarget] = useState<Appointment | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [profile, setProfile] = useState<any>(null);
+
+  const EDIT_ROLES = ["owner_admin", "hospital_admin", "doctor", "staff"];
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("users").select("role").eq("id", user.id).single().then(({ data }) => setProfile(data));
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase
       .from("appointments")
-      .select("id, date, status, notes, doctors(name, specialization), patients(name, personal_id)")
+      .select("id, date, status, notes, doctor_id, patient_id, doctors(name, specialization), patients(name, personal_id)")
       .order("date", { ascending: false })
       .limit(100);
     setAppointments((data ?? []) as unknown as Appointment[]);
@@ -77,6 +78,20 @@ export default function AppointmentsPage() {
     supabase.from("patients").select("id, name, personal_id").then(({ data }) => setPatients(data ?? []));
   }, [load]);
 
+  const openCreate = () => { setEditTarget(null); setForm(EMPTY_FORM); setError(""); setShowModal(true); };
+  const openEdit = (a: Appointment) => {
+    setEditTarget(a);
+    setForm({
+      doctor_id: String(a.doctor_id ?? ""),
+      patient_id: String(a.patient_id ?? ""),
+      date: a.date ? new Date(a.date).toISOString().slice(0, 16) : "",
+      status: a.status,
+      notes: a.notes ?? "",
+    });
+    setError("");
+    setShowModal(true);
+  };
+
   const filtered = appointments.filter((a) =>
     !search.trim() ||
     a.patients?.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -88,31 +103,54 @@ export default function AppointmentsPage() {
       setError("Doctor, patient, and date are required.");
       return;
     }
-    setSaving(true);
-    setError("");
-    const { error: err } = await supabase.from("appointments").insert([{
-      doctor_id: Number(form.doctor_id),
-      patient_id: Number(form.patient_id),
-      date: form.date,
-      status: form.status,
-      notes: form.notes || null,
-    }]);
-    if (err) { setError(err.message); setSaving(false); return; }
+    setSaving(true); setError("");
 
-    const patient = patients.find((item) => String(item.id) === form.patient_id);
-    const doctor = doctors.find((item) => String(item.id) === form.doctor_id);
-    await recordActivity({
-      action: `Booked appointment for ${patient?.name ?? "patient"} with ${doctor?.name ?? "doctor"}.`,
-      actionType: "create",
-      tableName: "appointments",
-      patientId: Number(form.patient_id),
-      details: `${form.status}${form.notes ? ` - ${form.notes}` : ""}`,
-    });
+    if (editTarget) {
+      // UPDATE
+      const { error: err } = await supabase.from("appointments").update({
+        doctor_id: Number(form.doctor_id),
+        patient_id: Number(form.patient_id),
+        date: form.date,
+        status: form.status,
+        notes: form.notes || null,
+      }).eq("id", editTarget.id);
 
-    setSaving(false);
-    setShowModal(false);
-    load();
+      if (err) { setError(err.message); setSaving(false); return; }
+
+      const patient = patients.find((p) => String(p.id) === form.patient_id);
+      await recordActivity({
+        action: `Updated appointment for ${patient?.name ?? "patient"} — status: ${form.status}.`,
+        actionType: "update",
+        tableName: "appointments",
+        patientId: Number(form.patient_id),
+        details: form.notes || form.status,
+      });
+    } else {
+      // CREATE
+      const { error: err } = await supabase.from("appointments").insert([{
+        doctor_id: Number(form.doctor_id),
+        patient_id: Number(form.patient_id),
+        date: form.date,
+        status: form.status,
+        notes: form.notes || null,
+      }]);
+      if (err) { setError(err.message); setSaving(false); return; }
+
+      const patient = patients.find((p) => String(p.id) === form.patient_id);
+      const doctor = doctors.find((d) => String(d.id) === form.doctor_id);
+      await recordActivity({
+        action: `Booked appointment for ${patient?.name ?? "patient"} with ${doctor?.name ?? "doctor"}.`,
+        actionType: "create",
+        tableName: "appointments",
+        patientId: Number(form.patient_id),
+        details: `${form.status}${form.notes ? ` - ${form.notes}` : ""}`,
+      });
+    }
+
+    setSaving(false); setShowModal(false); load();
   };
+
+  const canEdit = profile && EDIT_ROLES.includes(profile.role);
 
   return (
     <div className="space-y-6">
@@ -123,10 +161,7 @@ export default function AppointmentsPage() {
           </h1>
           <p className="text-sm text-slate-400 mt-0.5">{appointments.length} total records</p>
         </div>
-        <button
-          onClick={() => { setShowModal(true); setError(""); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-med-teal hover:bg-sky-400 text-white transition-all"
-        >
+        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-med-teal hover:bg-sky-400 text-white transition-all">
           <Plus size={16} /> New Appointment
         </button>
       </div>
@@ -146,23 +181,16 @@ export default function AppointmentsPage() {
       {/* table */}
       <div className="glass-panel rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="flex justify-center items-center py-16 gap-2 text-slate-500">
-            <Loader2 size={18} className="animate-spin" /> Loading…
-          </div>
+          <div className="flex justify-center items-center py-16 gap-2 text-slate-500"><Loader2 size={18} className="animate-spin" /> Loading…</div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500">
-            <AlertCircle size={28} />
-            <p className="text-sm">No appointments found.</p>
-          </div>
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500"><AlertCircle size={28} /><p className="text-sm">No appointments found.</p></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  {["Patient", "Doctor", "Date & Time", "Status", "Notes"].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                      {h}
-                    </th>
+                  {["Patient", "Doctor", "Date & Time", "Status", "Notes", ...(canEdit ? ["Actions"] : [])].map((h) => (
+                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -177,9 +205,7 @@ export default function AppointmentsPage() {
                       <p className="text-slate-200">{a.doctors?.name ?? "—"}</p>
                       <p className="text-xs text-slate-500">{a.doctors?.specialization}</p>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-400 whitespace-nowrap">
-                      {new Date(a.date).toLocaleString()}
-                    </td>
+                    <td className="px-5 py-3.5 text-slate-400 whitespace-nowrap">{new Date(a.date).toLocaleString()}</td>
                     <td className="px-5 py-3.5">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[a.status] ?? "bg-slate-700 text-slate-300"}`}>
                         {STATUS_ICONS[a.status]}
@@ -187,6 +213,13 @@ export default function AppointmentsPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-slate-400 max-w-xs truncate">{a.notes ?? "—"}</td>
+                    {canEdit && (
+                      <td className="px-5 py-3.5">
+                        <button onClick={() => openEdit(a)} className="flex items-center gap-1 text-xs text-med-teal hover:underline">
+                          <Pencil size={12} /> Edit
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -195,15 +228,13 @@ export default function AppointmentsPage() {
         )}
       </div>
 
-      {/* ── MODAL ── */}
+      {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}>
-          <div className="glass-panel rounded-2xl w-full max-w-md">
+          <div className="glass-panel rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
-              <h2 className="text-base font-semibold text-white">New Appointment</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all">
-                <X size={16} />
-              </button>
+              <h2 className="text-base font-semibold text-white">{editTarget ? "Edit Appointment" : "New Appointment"}</h2>
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all"><X size={16} /></button>
             </div>
             <div className="px-6 py-5 space-y-4">
               {error && <p className="text-sm text-red-400 bg-red-400/10 rounded-lg px-3 py-2">{error}</p>}
@@ -212,11 +243,8 @@ export default function AppointmentsPage() {
               <div>
                 <label className="block text-xs text-slate-400 mb-1.5">Patient *</label>
                 <div className="relative">
-                  <select
-                    value={form.patient_id}
-                    onChange={(e) => setForm({ ...form, patient_id: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors"
-                  >
+                  <select value={form.patient_id} onChange={(e) => setForm({ ...form, patient_id: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors">
                     <option value="">Select patient…</option>
                     {patients.map((p) => <option key={p.id} value={p.id}>{p.name} — {p.personal_id}</option>)}
                   </select>
@@ -228,11 +256,8 @@ export default function AppointmentsPage() {
               <div>
                 <label className="block text-xs text-slate-400 mb-1.5">Doctor *</label>
                 <div className="relative">
-                  <select
-                    value={form.doctor_id}
-                    onChange={(e) => setForm({ ...form, doctor_id: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors"
-                  >
+                  <select value={form.doctor_id} onChange={(e) => setForm({ ...form, doctor_id: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-900 border border-white/8 text-slate-200 appearance-none outline-none focus:border-med-teal transition-colors">
                     <option value="">Select doctor…</option>
                     {doctors.map((d) => <option key={d.id} value={d.id}>{d.name} — {d.specialization}</option>)}
                   </select>
@@ -269,7 +294,7 @@ export default function AppointmentsPage() {
               <button onClick={handleSave} disabled={saving}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-med-teal hover:bg-sky-400 text-white transition-all disabled:opacity-50">
                 {saving && <Loader2 size={14} className="animate-spin" />}
-                {saving ? "Booking…" : "Book Appointment"}
+                {saving ? "Saving…" : editTarget ? "Save Changes" : "Book Appointment"}
               </button>
             </div>
           </div>
