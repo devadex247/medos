@@ -1,17 +1,9 @@
 import type { Metadata } from "next";
-import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-outfit",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
+const outfit = { variable: "font-outfit" };
+const inter = { variable: "font-inter" };
 
 export const metadata: Metadata = {
   title: "MedOS AI - AI Hospital Management System",

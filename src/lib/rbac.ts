@@ -50,11 +50,11 @@ export const ROLE_DESCRIPTIONS: Record<Role, string> = {
 };
 
 export const ROLE_COLORS: Record<Role, string> = {
-  owner_admin: "text-med-accent",
-  hospital_admin: "text-med-teal",
-  doctor: "text-emerald-400",
-  staff: "text-amber-400",
-  patient: "text-slate-300",
+  owner_admin: "text-indigo-600 dark:text-indigo-400",
+  hospital_admin: "text-sky-600 dark:text-sky-400",
+  doctor: "text-emerald-600 dark:text-emerald-400",
+  staff: "text-amber-600 dark:text-amber-400",
+  patient: "text-slate-500 dark:text-slate-400",
 };
 
 export const DASHBOARD_ROUTES: readonly DashboardRoute[] = [

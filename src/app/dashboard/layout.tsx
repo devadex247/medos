@@ -170,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-dashboard-shell text-white">
+      <div className="flex h-screen items-center justify-center bg-dashboard-shell text-slate-900 dark:text-white">
         <div className="flex flex-col items-center gap-4 rounded-3xl bg-white/95 border border-blue-100/60 p-8 shadow-[0_24px_80px_-48px_rgba(56,102,255,0.12)] dark:bg-white/5 dark:border-white/10 dark:shadow-[0_24px_80px_-48px_rgba(15,23,42,0.9)]">
           <div className="w-12 h-12 border-2 border-med-teal border-t-transparent rounded-full animate-spin" />
           <p className="text-slate-900 text-sm dark:text-slate-200">Loading MedOS AI…</p>
@@ -182,11 +182,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <>
       <AutoLogoutHandler />
-      <div className="flex h-screen overflow-hidden bg-dashboard-shell text-white">
+      <div className="flex h-screen overflow-hidden bg-dashboard-shell text-slate-900 dark:text-white">
         {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
         <aside
           className={`
-            flex flex-col transition-width duration-300 ease-in-out overflow-hidden border-r border-blue-100/70 bg-white/95 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(56,102,255,0.12)]
+            flex flex-col transition-width duration-300 ease-in-out overflow-hidden border-r border-slate-200/80 dark:border-white/5 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl shadow-[inset_0_0_0_1px_rgba(56,102,255,0.06)] dark:shadow-none
             ${sidebarOpen ? "w-64" : "w-16"}
           `}
         >
@@ -220,8 +220,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       className={`
                         flex items-center gap-3 rounded-3xl px-3 py-3 text-sm font-semibold transition-all duration-200 group
                         ${isActive
-                          ? "bg-gradient-to-r from-med-teal/20 to-med-accent/20 text-white shadow-[0_18px_40px_-28px_rgba(56,189,248,0.8)]"
-                          : "text-slate-600 hover:text-white hover:bg-blue-50 dark:text-slate-300 dark:hover:bg-white/10"}
+                          ? "bg-medosBlue/10 dark:bg-medosBlue/20 text-medosBlue dark:text-sky-400 font-bold"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-white/5"}
                       `}
                     >
                       {/* Active indicator bar */}
@@ -259,7 +259,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <button
                   onClick={handleSignOut}
                   title="Sign out"
-                  className="p-1.5 rounded-lg text-slate-300 hover:text-red-300 hover:bg-red-400/10 transition-all duration-200"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-400/10 transition-all duration-200"
                 >
                   <LogOut size={15} />
                 </button>
@@ -268,7 +268,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 onClick={handleSignOut}
                 title="Sign out"
-                className="w-full flex justify-center p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                className="w-full flex justify-center p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-400/10 transition-all"
               >
                 <LogOut size={18} />
               </button>
@@ -279,7 +279,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top bar */}
-          <header className="h-16 flex items-center gap-4 px-6 border-b border-white/10 bg-white/10 backdrop-blur-xl flex-shrink-0 shadow-sm">
+          <header className="h-16 flex items-center gap-4 px-6 border-b border-slate-200/60 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl flex-shrink-0 shadow-sm">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 rounded-lg text-med-muted hover:text-med-primary hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200"
@@ -403,7 +403,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <button
                       type="button"
                       onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
                     >
                       <LogOut size={16} /> Sign out
                     </button>

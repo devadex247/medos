@@ -62,10 +62,7 @@ body {
 }
 
 .bg-dashboard-shell {
-  background-image:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(99, 102, 241, 0.12), transparent 18%),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 17, 29, 0.96));
+  background: var(--dashboard-shell);
 }
 
 .glass-panel {
