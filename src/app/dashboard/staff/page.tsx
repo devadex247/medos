@@ -145,7 +145,7 @@ export default function StaffPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2"><UserCog size={20} className="text-amber-400" /> Staff Management</h1>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><UserCog size={20} className="text-amber-400" /> Staff Management</h1>
           <p className="text-sm text-slate-400 mt-0.5">{schedules.length} shift records</p>
         </div>
         {canEdit && (

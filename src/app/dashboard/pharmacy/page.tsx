@@ -124,7 +124,7 @@ export default function PharmacyPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2"><Pill size={20} className="text-amber-400" /> Pharmacy & Inventory</h1>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><Pill size={20} className="text-amber-400" /> Pharmacy & Inventory</h1>
           <p className="text-sm text-slate-400 mt-0.5">{items.length} items · {low.length} low stock</p>
         </div>
         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-amber-500 hover:bg-amber-400 text-white transition-all">

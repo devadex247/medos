@@ -82,7 +82,7 @@ export default function RadiologyPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2"><Scan size={20} className="text-sky-400" /> Radiology (PACS)</h1>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><Scan size={20} className="text-sky-400" /> Radiology (PACS)</h1>
           <p className="text-sm text-slate-400 mt-0.5">{images.length} imaging records</p>
         </div>
         <button onClick={() => { setShowModal(true); setError(""); }} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-500 hover:bg-sky-400 text-white transition-all">

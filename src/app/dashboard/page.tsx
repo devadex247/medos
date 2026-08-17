@@ -157,20 +157,20 @@ function StatCard({ kpi, delay }: { kpi: KPI; delay: number }) {
     >
       <div className="flex items-start justify-between">
         <div
-          className={`w-12 h-12 rounded-3xl flex items-center justify-center border border-blue-100 shadow-[0_18px_40px_-30px_rgba(56,189,248,0.35)] bg-gradient-to-br from-sky-500 to-blue-600 ${kpi.color}`}
+          className={`w-12 h-12 rounded-3xl flex items-center justify-center border border-blue-100 dark:border-white/5 shadow-[0_18px_40px_-30px_rgba(56,189,248,0.35)] dark:shadow-none bg-gradient-to-br from-sky-500 to-blue-600 ${kpi.color}`}
         >
           <Icon size={20} className="text-white" />
         </div>
         <ArrowUpRight
           size={16}
-          className="text-slate-500 group-hover:text-blue-700 transition-colors duration-200"
+          className="text-slate-500 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-200"
         />
       </div>
       <div>
-        <p className="text-3xl font-bold text-slate-900 tabular-nums">{kpi.value}</p>
-        <p className="text-xs text-slate-500 mt-0.5">{kpi.label}</p>
+        <p className="text-3xl font-bold text-slate-900 dark:text-white tabular-nums">{kpi.value}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{kpi.label}</p>
       </div>
-      <p className="text-xs text-slate-400">{kpi.sub}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500">{kpi.sub}</p>
     </Link>
   );
 }
@@ -265,6 +265,7 @@ export default function DashboardOverview() {
   const [patientActionLoading, setPatientActionLoading] = useState("");
   const [patientActionMessage, setPatientActionMessage] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [activeTab, setActiveTab] = useState<"appointments" | "prescriptions" | "vitals" | "labs" | "bills">("appointments");
 
   useEffect(() => {
     const load = async () => {
@@ -404,11 +405,13 @@ export default function DashboardOverview() {
               href: "/dashboard",
             },
             {
-              label: "Latest Risk",
-              value: latestVital?.risk_level ?? "No vitals",
-              sub: latestVital ? `MEWS ${latestVital.mews_score}` : `${openBills.length} open bill(s)`,
-              icon: Activity,
-              color: latestVital?.risk_level === "Critical" ? "text-red-400" : "text-med-accent",
+              label: "Lab Orders",
+              value: labs.length,
+              sub: labs.filter((l) => l.status === "Pending").length
+                ? `${labs.filter((l) => l.status === "Pending").length} pending results`
+                : "All results ready",
+              icon: FlaskConical,
+              color: "text-med-accent",
               href: "/dashboard",
             },
           ]);
@@ -487,14 +490,14 @@ export default function DashboardOverview() {
     <div className="space-y-8">
       {/* ── Greeting ───────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
           {greeting()},{" "}
           <span className="text-med-teal">
             {profile?.full_name?.split(" ")[0] ?? profile?.username ?? "User"}
           </span>{" "}
           👋
         </h1>
-        <p className="text-slate-400 text-sm">
+        <p className="text-slate-500 dark:text-slate-400 text-sm">
           {role === "patient"
             ? patientRecord
               ? `Your care profile is linked to ${patientRecord.personal_id}.`
@@ -520,7 +523,7 @@ export default function DashboardOverview() {
 
       {/* ── Quick Actions ──────────────────────────────────────────── */}
       <section>
-        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
+        <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
           Quick Actions
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -535,7 +538,7 @@ export default function DashboardOverview() {
                 <div className={`w-11 h-11 rounded-3xl bg-gradient-to-br ${a.color} flex items-center justify-center shadow-sm shadow-slate-900/30`}>
                   <Icon size={18} className="text-white" />
                 </div>
-                <span className="text-sm font-semibold text-slate-100 group-hover:text-white transition-colors">
+                <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-950 dark:text-slate-200 dark:group-hover:text-white transition-colors">
                   {a.label}
                 </span>
                 <span
@@ -551,7 +554,7 @@ export default function DashboardOverview() {
       {role === "patient" && !loading && (
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
+            <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
               Patient Portal
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -559,7 +562,7 @@ export default function DashboardOverview() {
                 <button
                   type="button"
                   onClick={copyPatientId}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-sky-50 hover:bg-sky-100 text-slate-900 transition-all"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-sky-50 dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition-all cursor-pointer"
                 >
                   <Clipboard size={14} /> Copy ID
                 </button>
@@ -568,7 +571,7 @@ export default function DashboardOverview() {
                 type="button"
                 onClick={requestPatientFollowUp}
                 disabled={patientActionLoading === "follow-up"}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-med-teal hover:bg-sky-400 text-white transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-med-teal hover:bg-sky-400 text-white transition-all disabled:opacity-50 cursor-pointer"
               >
                 {patientActionLoading === "follow-up" ? <Loader2 size={14} className="animate-spin" /> : <CalendarDays size={14} />}
                 Request Follow-up
@@ -576,7 +579,7 @@ export default function DashboardOverview() {
               <button
                 type="button"
                 onClick={refreshDashboard}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border border-white/10 text-slate-300 hover:bg-white/5 transition-all"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
               >
                 <RefreshCw size={14} /> Refresh
               </button>
@@ -592,12 +595,12 @@ export default function DashboardOverview() {
           {!patientRecord ? (
             <div className="glass-panel rounded-2xl p-5 flex flex-col gap-4">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center">
                   <AlertCircle size={20} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-100">Care file not linked yet</p>
-                  <p className="text-sm text-slate-400 mt-1">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Care file not linked yet</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Your account is active, but the hospital has not connected it to a patient record. Send a follow-up request or update your profile details.
                   </p>
                 </div>
@@ -607,163 +610,217 @@ export default function DashboardOverview() {
                   type="button"
                   onClick={requestPatientFollowUp}
                   disabled={patientActionLoading === "follow-up"}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-med-teal hover:bg-sky-400 text-white transition-all disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-med-teal hover:bg-sky-400 text-white transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {patientActionLoading === "follow-up" ? <Loader2 size={14} className="animate-spin" /> : <CalendarDays size={14} />}
                   Ask Hospital To Link File
                 </button>
                 <Link
                   href="/dashboard/settings"
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-50 hover:bg-sky-100 text-slate-900 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-50 dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition-all"
                 >
                   <Settings size={14} /> Update Profile
                 </Link>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              <div className="glass-panel rounded-2xl overflow-hidden">
-                <div className="px-5 py-4 border-b border-white/5 flex items-center gap-2">
-                  <CalendarDays size={16} className="text-med-teal" />
-                  <h3 className="text-sm font-semibold text-slate-100">Upcoming Visits</h3>
-                </div>
-                {patientPortalData.appointments.length === 0 ? (
-                  <p className="px-5 py-6 text-sm text-slate-500">No appointments are currently scheduled.</p>
-                ) : (
-                  <ul className="divide-y divide-white/5">
-                    {patientPortalData.appointments.map((appointment) => (
-                      <li key={appointment.id} className="px-5 py-3.5 flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-slate-100">{new Date(appointment.date).toLocaleString()}</p>
-                          <p className="text-xs text-slate-500 mt-1">
-                            {appointment.doctors?.name ?? "Doctor pending"} · {appointment.doctors?.specialization ?? "Care team"}
-                          </p>
-                          {appointment.notes && <p className="text-xs text-slate-400 mt-1">{appointment.notes}</p>}
-                        </div>
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-med-teal/15 text-med-teal">
-                          {appointment.status}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+            <div className="space-y-6">
+              {/* Tab Selector */}
+              <div className="flex border-b border-slate-200 dark:border-white/10 space-x-6 overflow-x-auto">
+                {[
+                  { id: "appointments", label: "Appointments", icon: CalendarDays },
+                  { id: "prescriptions", label: "Prescriptions", icon: Pill },
+                  { id: "vitals", label: "Vitals Record", icon: HeartPulse },
+                  { id: "labs", label: "Lab Results", icon: FlaskConical },
+                  { id: "bills", label: "Billing", icon: CreditCard },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`flex items-center gap-2 pb-3 text-sm font-semibold transition-all relative border-b-2 whitespace-nowrap cursor-pointer ${
+                        isActive
+                          ? "border-med-teal text-med-teal dark:text-sky-400"
+                          : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      }`}
+                    >
+                      <Icon size={16} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="glass-panel rounded-2xl overflow-hidden">
-                <div className="px-5 py-4 border-b border-white/5 flex items-center gap-2">
-                  <Pill size={16} className="text-amber-400" />
-                  <h3 className="text-sm font-semibold text-slate-100">Prescriptions</h3>
-                </div>
-                {patientPortalData.prescriptions.length === 0 ? (
-                  <p className="px-5 py-6 text-sm text-slate-500">No active prescriptions are on file.</p>
-                ) : (
-                  <ul className="divide-y divide-white/5">
-                    {patientPortalData.prescriptions.map((prescription) => (
-                      <li key={prescription.id} className="px-5 py-3.5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-sm font-medium text-slate-100">{prescription.medicine_name}</p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {prescription.dosage} · {prescription.frequency} · {prescription.duration}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-1">Doctor: {prescription.doctors?.name ?? "Care team"}</p>
-                          </div>
-                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-400">
-                            {prescription.status}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="glass-panel rounded-2xl overflow-hidden">
-                <div className="px-5 py-4 border-b border-white/5 flex items-center gap-2">
-                  <HeartPulse size={16} className="text-rose-400" />
-                  <h3 className="text-sm font-semibold text-slate-100">Latest Vitals</h3>
-                </div>
-                {patientPortalData.vitals.length === 0 ? (
-                  <p className="px-5 py-6 text-sm text-slate-500">No vitals have been recorded yet.</p>
-                ) : (
-                  <ul className="divide-y divide-white/5">
-                    {patientPortalData.vitals.map((vital) => (
-                      <li key={vital.id} className="px-5 py-3.5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-sm font-medium text-slate-100">{vital.risk_level} · MEWS {vital.mews_score}</p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              HR {vital.heart_rate} · SpO2 {vital.spo2}% · Temp {vital.temperature}C
-                            </p>
-                            <p className="text-xs text-slate-400 mt-1 line-clamp-2">{vital.recommendation}</p>
-                          </div>
-                          <span className="text-xs text-slate-500 whitespace-nowrap">{formatActivityTime(vital.created_at)}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="glass-panel rounded-2xl overflow-hidden">
-                <div className="px-5 py-4 border-b border-white/5 flex items-center gap-2">
-                  <FlaskConical size={16} className="text-med-accent" />
-                  <h3 className="text-sm font-semibold text-slate-100">Lab Results</h3>
-                </div>
-                {patientPortalData.labs.length === 0 ? (
-                  <p className="px-5 py-6 text-sm text-slate-500">No lab orders are available.</p>
-                ) : (
-                  <ul className="divide-y divide-white/5">
-                    {patientPortalData.labs.map((lab) => (
-                      <li key={lab.id} className="px-5 py-3.5 flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-slate-100">{lab.test_name}</p>
-                          <p className="text-xs text-slate-500 mt-1">{lab.result || "Result pending"}</p>
-                        </div>
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-med-accent/15 text-med-accent">
-                          {lab.status}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="glass-panel rounded-2xl overflow-hidden xl:col-span-2">
-                <div className="px-5 py-4 border-b border-white/5 flex items-center gap-2">
-                  <CreditCard size={16} className="text-emerald-400" />
-                  <h3 className="text-sm font-semibold text-slate-100">Billing</h3>
-                </div>
-                {patientPortalData.bills.length === 0 ? (
-                  <p className="px-5 py-6 text-sm text-slate-500">No billing records are available.</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-white/5">
-                          {["Date", "Amount", "Status"].map((heading) => (
-                            <th key={heading} className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                              {heading}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                        {patientPortalData.bills.map((bill) => (
-                          <tr key={bill.id}>
-                            <td className="px-5 py-3.5 text-slate-400">{new Date(bill.billing_date).toLocaleDateString()}</td>
-                            <td className="px-5 py-3.5 text-slate-100 font-semibold tabular-nums">
-                              ${bill.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </td>
-                            <td className="px-5 py-3.5">
-                              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400">
-                                {bill.status}
-                              </span>
-                            </td>
-                          </tr>
+              {/* Tab Content Panels */}
+              <div className="transition-all duration-300">
+                {activeTab === "appointments" && (
+                  <div className="glass-panel rounded-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-200 dark:border-white/5 flex items-center gap-2">
+                      <CalendarDays size={16} className="text-med-teal" />
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Upcoming Visits</h3>
+                    </div>
+                    {patientPortalData.appointments.length === 0 ? (
+                      <p className="px-5 py-6 text-sm text-slate-500 dark:text-slate-400">No appointments are currently scheduled.</p>
+                    ) : (
+                      <ul className="divide-y divide-slate-100 dark:divide-white/5">
+                        {patientPortalData.appointments.map((appointment) => (
+                          <li key={appointment.id} className="px-5 py-3.5 flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{new Date(appointment.date).toLocaleString()}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                {appointment.doctors?.name ?? "Doctor pending"} · {appointment.doctors?.specialization ?? "Care team"}
+                              </p>
+                              {appointment.notes && <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{appointment.notes}</p>}
+                            </div>
+                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-med-teal/15 text-med-teal">
+                              {appointment.status}
+                            </span>
+                          </li>
                         ))}
-                      </tbody>
-                    </table>
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "prescriptions" && (
+                  <div className="glass-panel rounded-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-200 dark:border-white/5 flex items-center gap-2">
+                      <Pill size={16} className="text-amber-500 dark:text-amber-400" />
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Prescriptions</h3>
+                    </div>
+                    {patientPortalData.prescriptions.length === 0 ? (
+                      <p className="px-5 py-6 text-sm text-slate-500 dark:text-slate-400">No active prescriptions are on file.</p>
+                    ) : (
+                      <ul className="divide-y divide-slate-100 dark:divide-white/5">
+                        {patientPortalData.prescriptions.map((prescription) => (
+                          <li key={prescription.id} className="px-5 py-3.5">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{prescription.medicine_name}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                  {prescription.dosage} · {prescription.frequency} · {prescription.duration}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Doctor: {prescription.doctors?.name ?? "Care team"}</p>
+                              </div>
+                              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-500 dark:text-amber-400">
+                                {prescription.status}
+                              </span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "vitals" && (
+                  <div className="glass-panel rounded-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-200 dark:border-white/5 flex items-center gap-2">
+                      <HeartPulse size={16} className="text-rose-500 dark:text-rose-400" />
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Vitals Readings</h3>
+                    </div>
+                    {patientPortalData.vitals.length === 0 ? (
+                      <p className="px-5 py-6 text-sm text-slate-500 dark:text-slate-400">No vitals have been recorded yet.</p>
+                    ) : (
+                      <ul className="divide-y divide-slate-100 dark:divide-white/5">
+                        {patientPortalData.vitals.map((vital) => (
+                          <li key={vital.id} className="px-5 py-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div className="grid grid-cols-3 gap-6 sm:gap-12">
+                                <div>
+                                  <span className="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Heart Rate</span>
+                                  <span className="text-lg font-bold text-slate-900 dark:text-white">{vital.heart_rate} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">bpm</span></span>
+                                </div>
+                                <div>
+                                  <span className="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Oxygen SpO2</span>
+                                  <span className="text-lg font-bold text-slate-900 dark:text-white">{vital.spo2}<span className="text-xs font-normal text-slate-500 dark:text-slate-400">%</span></span>
+                                </div>
+                                <div>
+                                  <span className="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Temperature</span>
+                                  <span className="text-lg font-bold text-slate-900 dark:text-white">{vital.temperature}<span className="text-xs font-normal text-slate-500 dark:text-slate-400">°C</span></span>
+                                </div>
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400 self-start sm:self-center">
+                                Recorded {formatActivityTime(vital.created_at)}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "labs" && (
+                  <div className="glass-panel rounded-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-200 dark:border-white/5 flex items-center gap-2">
+                      <FlaskConical size={16} className="text-med-accent" />
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Lab Results</h3>
+                    </div>
+                    {patientPortalData.labs.length === 0 ? (
+                      <p className="px-5 py-6 text-sm text-slate-500 dark:text-slate-400">No lab orders are available.</p>
+                    ) : (
+                      <ul className="divide-y divide-slate-100 dark:divide-white/5">
+                        {patientPortalData.labs.map((lab) => (
+                          <li key={lab.id} className="px-5 py-3.5 flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{lab.test_name}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{lab.result || "Result pending"}</p>
+                            </div>
+                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-med-accent/15 text-med-accent">
+                              {lab.status}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "bills" && (
+                  <div className="glass-panel rounded-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-200 dark:border-white/5 flex items-center gap-2">
+                      <CreditCard size={16} className="text-emerald-500 dark:text-emerald-400" />
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Billing History</h3>
+                    </div>
+                    {patientPortalData.bills.length === 0 ? (
+                      <p className="px-5 py-6 text-sm text-slate-500 dark:text-slate-400">No billing records are available.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/20">
+                              {["Date", "Amount", "Status"].map((heading) => (
+                                <th key={heading} className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                  {heading}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                            {patientPortalData.bills.map((bill) => (
+                              <tr key={bill.id} className="hover:bg-slate-50/40 dark:hover:bg-white/[0.01] transition-colors">
+                                <td className="px-5 py-3.5 text-slate-600 dark:text-slate-400">{new Date(bill.billing_date).toLocaleDateString()}</td>
+                                <td className="px-5 py-3.5 text-slate-900 dark:text-slate-100 font-semibold tabular-nums">
+                                  ${bill.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </td>
+                                <td className="px-5 py-3.5">
+                                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                                    bill.status === "Paid"
+                                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                      : "bg-red-500/15 text-red-600 dark:text-red-400"
+                                  }`}>
+                                    {bill.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
